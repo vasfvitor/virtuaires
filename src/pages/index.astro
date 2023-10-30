@@ -1,0 +1,131 @@
+---
+import BaseHead from "../components/BaseHead.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <style>
+      body {
+        min-height: 80vh;
+      }
+      .brazil {
+        border-radius: 8px;
+        padding: 12px 0;
+        width: fit-content;
+        background: url("/Brazil.svg") center no-repeat;
+        background-size: contain;
+        background-clip: text;
+        text-align: center;
+        font-weight: 900;
+        color: transparent;
+        /* text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
+      */
+      }
+      .animate-text {
+        line-height: 1;
+        letter-spacing: -0.1rem;
+      }
+      .animate-text {
+        animation-name: color-change;
+        animation-duration: 8s;
+        animation-iteration-count: infinite;
+        animation-timing-function: cubic-bezier(0, 1.17, 1, 1);
+      }
+      @keyframes color-change {
+        0% {
+          color: transparent;
+        }
+        50% {
+          color: white;
+        }
+        100% {
+          color: transparent;
+        }
+      }
+
+      .yes {
+        line-height: 0px;
+        text-align: right;
+        text-decoration: underline dotted 12px;
+        text-decoration-color: var(--accent-dark);
+      }
+
+      .card {
+        border-radius: 8px;
+        background: linear-gradient(
+          135deg,
+          var(--accent-darker),
+          rgba(255, 0, 0, 0),
+          rgba(182, 0, 0, 0)
+        );
+        padding: 4px;
+      }
+
+      .card div {
+        max-width: 65ch;
+        padding: 32px 48px;
+        border-radius: calc(8px - 4px);
+        background: linear-gradient(
+          45deg,
+          var(--accent-darkest),
+          rgba(255, 0, 0, 0),
+          rgba(255, 0, 0, 0)
+        );
+        margin: 0;
+      }
+
+      .ai-typing {
+        color: black;
+        user-select: none;
+        background-color: var(--accent-lightest);
+        width: fit-content;
+        border-radius: 4px;
+        padding: 4px 12px;
+        font-weight: 900;
+      }
+      .hero {
+        background: radial-gradient(
+          circle,
+          rgb(255, 0, 0) 0%,
+          rgba(255, 255, 255, 0) 12%
+        );
+   
+      }
+
+      @keyframes bgg {
+      
+    </style>
+    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+  </head>
+
+  <body>
+    <Header title={SITE_TITLE} />
+    <main>
+      <section class="hero">
+        <h1>
+          Oi!<br />Am I Software Engineer <br />from <span
+            class="brazil animate-text">Brazil</span
+          >?
+        </h1>
+        <p class="yes">&#160;&#160;yessss I am&#160;&#160;</p>
+      </section>
+      <hr />
+      <!-- <section class="card">
+        TODO: THIS
+        <div>
+          <h2>About Me</h2>
+          <p>
+            Lemme ask AI <br /> - Hey, yo, tellem allabout me, omit my secrets
+          </p>
+          <p class="ai-typing">typing...</p>
+          <p>I'm sorry Dave, I'm afraid I can't do that</p>
+        </div>
+      </section> -->
+    </main>
+    <Footer />
+  </body>
+</html>
