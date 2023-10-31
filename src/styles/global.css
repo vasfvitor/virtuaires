@@ -117,7 +117,7 @@ img {
 }
 code {
   padding: 2px 5px;
-  background-color: rgb(var(--gray-light));
+  background-color: var(--gray-dark);
   border-radius: 2px;
 }
 pre {
@@ -135,7 +135,7 @@ blockquote {
 }
 hr {
   border: none;
-  border-top: 1px solid rgb(var(--gray-light));
+  border-top: 1px solid var(--gray-light);
 }
 @media (max-width: 720px) {
   body {
