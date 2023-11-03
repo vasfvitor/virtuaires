@@ -12,46 +12,16 @@ import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
       body {
         min-height: 80vh;
       }
-      .brazil {
-        border-radius: 8px;
-        padding: 12px 0;
-        width: fit-content;
-        background: url("/Brazil.svg") center no-repeat;
-        background-size: contain;
-        background-clip: text;
-        text-align: center;
-        font-weight: 900;
-        color: transparent;
-        /* text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
-      */
-      }
-      .animate-text {
-        line-height: 1;
-        letter-spacing: -0.1rem;
-      }
-      .animate-text {
-        animation-name: color-change;
-        animation-duration: 8s;
-        animation-iteration-count: infinite;
-        animation-timing-function: cubic-bezier(0, 1.17, 1, 1);
-      }
-      @keyframes color-change {
-        0% {
-          color: transparent;
-        }
-        50% {
-          color: white;
-        }
-        100% {
-          color: transparent;
-        }
-      }
 
-      .yes {
-        line-height: 0px;
-        text-align: right;
-        text-decoration: underline dotted 12px;
-        text-decoration-color: var(--accent-dark);
+      h1 {
+        text-align: center;
+        line-height: 0.95;
+        color: rgb(61, 13, 13);
+
+        text-shadow:
+          var(--accent-darker) 2px 2px 0px,
+          black 4px 4px 0px;
+        color: var(--white);
       }
 
       .card {
@@ -88,11 +58,52 @@ import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
         font-weight: 900;
       }
       .hero {
+        display: grid;
+        place-items: center;
+        position: relative;
+        height: 30vh;
+      }
+      .test {
         background: radial-gradient(
           circle,
           rgb(255, 0, 0) 0%,
           rgba(255, 255, 255, 0) 12%
         );
+      }
+      .center {
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .circle {
+        z-index: -1;
+        position: absolute;
+        border-radius: 999px;
+        filter: contrast(127%) brightness(127%);
+        background: radial-gradient(
+            circle at 90% 50%,
+            rgba(255, 255, 255, 0),
+            black
+          ),
+          url("data:image/svg+xml,%3Csvg viewBox='0 0 151 151' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='4.67' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      }
+      .circle-first {
+        width: 320px;
+        height: 320px;
+        left: 160px;
+        top: 80px;
+      }
+
+      .circle-second {
+        width: 160px;
+        height: 160px;
+        left: 160px;
+        top: 80px;
+      }
+      .circle-final {
+        width: 80px;
+        height: 80px;
+        left: 80px;
+        top: 40px;
       }
 
       @keyframes bgg {
@@ -104,27 +115,31 @@ import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
   <body>
     <Header title={SITE_TITLE} />
     <main>
-      <section class="hero">
+      <section class="hero" style="">
         <h1>
-          Oi!<br />Am I Software Engineer <br />from <span
-            class="brazil animate-text">Brazil</span
-          >?
+          I improve, fix &<br />document code.
         </h1>
-        <p class="yes">&#160;&#160;yessss I am&#160;&#160;</p>
+        <div class="circle circle-first">
+          <div class="circle circle-second">
+            <div class="circle circle-final"></div>
+          </div>
+        </div>
       </section>
-      <hr />
-      <!-- <section class="card">
+
+      <div class="hero">x</div>
+      <section class="card">
         TODO: THIS
         <div>
           <h2>About Me</h2>
           <p>
-            Lemme ask AI <br /> - Hey, yo, tellem allabout me, omit my secrets
+            Lemme ask AI <br /> - Hey, tell about me, omit my secrets
           </p>
           <p class="ai-typing">typing...</p>
           <p>I'm sorry Dave, I'm afraid I can't do that</p>
         </div>
-      </section> -->
+      </section>
     </main>
+
     <Footer />
   </body>
 </html>

@@ -5,6 +5,21 @@ pubDate: "Jul 01 2022"
 heroImage: "/blog-placeholder-1.jpg"
 ---
 
+
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Example HTML5 Document</title>
+  </head>
+  <body>
+    <p>Test</p>
+  </body>
+</html>
+```
+
 Here is a sample of some basic Markdown syntax that can be used when writing
 
 ## Headings
