@@ -5,7 +5,6 @@ const page = Astro.url.pathname;
 ---
 
 <header transition:persist>
-  <div class="corner-left"></div>
   <nav>
     <ul>
       <li aria-current={page === "/" ? "page" : undefined}>
@@ -19,46 +18,40 @@ const page = Astro.url.pathname;
       </li>
     </ul>
   </nav>
+  <button id="dark-mode-toggle">Toggle dark mode</button>
+  <script>
+    window.addEventListener("load", (event) => {
+      const btn = document.querySelector(
+        "#dark-mode-toggle"
+      ) as HTMLButtonElement;
 
-  <div class="corner-right"></div>
+      btn.addEventListener("click", () => {
+        document.body.classList.toggle("latex-dark");
+      });
+    });
+  </script>
 </header>
 
 <style>
-  .corner-right {
-    --size: 24px;
-    width: 0;
-    height: 0;
-    border-left: var(--size) solid transparent;
-    border-top: var(--size) solid var(--accent-dark);
+  #dark-mode-toggle {
+    top: 0;
+    right: 0;
+    position: absolute;
+    z-index: 20;
   }
-  .corner-left {
-    --size: 24px;
-    width: 0;
-    height: 0;
-    border-right: var(--size) solid transparent;
-    border-top: var(--size) solid var(--accent-dark);
-  }
-
   header {
-    display: flex;
-    justify-content: space-between;
+    z-index: 0;
+    position: absolute;
+    margin-left: -6rem;
   }
-
-  nav {
-    display: flex;
-    justify-content: center;
-  }
-
   ul {
-    position: relative;
-    padding: 0;
-    margin: 0;
-    height: 3em;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    list-style: none;
-    background-size: contain;
+    height: 2em;
+  }
+
+  nav li:before {
+    content: " ";
+    counter-increment: 0;
+    padding-right: 0;
   }
 
   li {
@@ -67,32 +60,33 @@ const page = Astro.url.pathname;
   }
 
   li[aria-current="page"]::before {
-    --size: 12px;
+    --size: 8px;
     content: "";
     width: 0;
     height: 0;
     position: absolute;
-    top: 0;
-    left: calc(50% - var(--size));
+    left: 0;
+    top: calc(50% - var(--size));
     border: var(--size) solid transparent;
-    border-top: var(--size) solid var(--accent-dark);
+    border-left: var(--size) solid var(--gray-dark);
+  }
+
+  a[aria-current="page"] {
+    background-color: red;
+    text-decoration: underline;
   }
 
   nav a {
-    display: flex;
-    height: 100%;
-    align-items: center;
+    background-color: red;
     padding: 0 0.5rem;
-    color: white;
+
     font-weight: 700;
-    font-size: 0.8rem;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
     text-decoration: none;
     transition: color 0.2s linear;
   }
 
   a:hover {
-    color: var(--accent-dark);
+    color: var(--gray-dark);
   }
 </style>

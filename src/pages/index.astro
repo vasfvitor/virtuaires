@@ -10,114 +10,74 @@ import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
   <head>
     <style>
       body {
-        min-height: 80vh;
+        display: flex;
+        flex-direction: column;
       }
-
       h1 {
-        text-align: center;
-        line-height: 0.95;
-        color: rgb(61, 13, 13);
-
+        font-size: 3rem;
+        margin-top: auto;
+        margin-bottom: auto;
+        z-index: 60;
         text-shadow:
-          var(--accent-darker) 2px 2px 0px,
-          black 4px 4px 0px;
+          var(--black) 2px 2px 0px,
+          var(--black) 4px 4px 0px;
         color: var(--white);
       }
-
-      .card {
-        border-radius: 8px;
-        background: linear-gradient(
-          135deg,
-          var(--accent-darker),
-          rgba(255, 0, 0, 0),
-          rgba(182, 0, 0, 0)
-        );
-        padding: 4px;
-      }
-
-      .card div {
-        max-width: 65ch;
-        padding: 32px 48px;
-        border-radius: calc(8px - 4px);
-        background: linear-gradient(
-          45deg,
-          var(--accent-darkest),
-          rgba(255, 0, 0, 0),
-          rgba(255, 0, 0, 0)
-        );
-        margin: 0;
-      }
-
-      .ai-typing {
-        color: black;
-        user-select: none;
-        background-color: var(--accent-lightest);
-        width: fit-content;
-        border-radius: 4px;
-        padding: 4px 12px;
-        font-weight: 900;
-      }
       .hero {
-        display: grid;
-        place-items: center;
+        z-index: 30;
+        display: flex;
+        justify-content: center;
         position: relative;
-        height: 30vh;
-      }
-      .test {
-        background: radial-gradient(
-          circle,
-          rgb(255, 0, 0) 0%,
-          rgba(255, 255, 255, 0) 12%
-        );
       }
       .center {
         margin-left: auto;
         margin-right: auto;
       }
       .circle {
-        z-index: -1;
+        z-index: 40;
         position: absolute;
         border-radius: 999px;
-        filter: contrast(127%) brightness(127%);
         background: radial-gradient(
-            circle at 90% 50%,
-            rgba(255, 255, 255, 0),
-            black
-          ),
-          url("data:image/svg+xml,%3Csvg viewBox='0 0 151 151' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='4.67' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+          circle at 90% 50%,
+          rgba(255, 255, 255, 0),
+          rgb(0, 0, 0)
+        );
+      }
+
+      :root {
+        --width: 320px;
+        --width-1-2: calc(var(--width) / 2);
+        --width-1-4: calc(var(--width) / 4);
+        --width-1-8: calc(var(--width) / 8);
       }
       .circle-first {
-        width: 320px;
-        height: 320px;
-        left: 160px;
-        top: 80px;
+        width: var(--width);
+        height: var(--width);
+        left: var(--width-1-2);
+        top: calc(var(--width-1-8) * -1);
       }
-
       .circle-second {
-        width: 160px;
-        height: 160px;
-        left: 160px;
-        top: 80px;
+        width: var(--width-1-2);
+        height: var(--width-1-2);
+        left: var(--width-1-2);
+        top: var(--width-1-4);
       }
       .circle-final {
-        width: 80px;
-        height: 80px;
-        left: 80px;
-        top: 40px;
-      }
-
-      @keyframes bgg {
+        width: var(--width-1-4);
+        height: var(--width-1-4);
+        left: var(--width-1-4);
+        top: var(--width-1-8);
       }
     </style>
     <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
   </head>
 
-  <body>
+  <body class="libertinus latex-dark">
     <Header title={SITE_TITLE} />
     <main>
       <section class="hero" style="">
         <h1>
-          I improve, fix &<br />document code.
+          Improve, fix &<br />document code.
         </h1>
         <div class="circle circle-first">
           <div class="circle circle-second">
@@ -126,20 +86,19 @@ import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
         </div>
       </section>
 
-      <div class="hero">x</div>
-      <section class="card">
+      <!-- <div class="">x</div>
+      <section class="">
         TODO: THIS
         <div>
           <h2>About Me</h2>
           <p>
             Lemme ask AI <br /> - Hey, tell about me, omit my secrets
           </p>
-          <p class="ai-typing">typing...</p>
+          <p class="">typing...</p>
           <p>I'm sorry Dave, I'm afraid I can't do that</p>
         </div>
-      </section>
+      </section> -->
     </main>
-
     <Footer />
   </body>
 </html>

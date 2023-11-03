@@ -14,7 +14,7 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
   <head>
     <BaseHead title={title} description={description} />
     <style>
-      main {
+      /* main {
         width: calc(100% - 2em);
         max-width: 100%;
         margin: 0;
@@ -34,7 +34,7 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
         margin: auto;
         padding: 1em;
         color: var(--gray-light);
-      }
+      } */
       .title {
         margin-bottom: 1em;
         padding: 1em 0;
@@ -46,7 +46,7 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
       }
       .date {
         margin-bottom: 0.5em;
-        color: var(--gray);
+        color: var(--sidenote-target-border-color);
       }
       .last-updated-on {
         font-style: italic;
@@ -54,7 +54,7 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
     </style>
   </head>
 
-  <body>
+  <body class="libertinus">
     <Header />
     <main>
       <article>

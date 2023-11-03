@@ -1,14 +1,4 @@
 :root {
-  --accent-lightest: #e0cef1;
-  --accent-lighter: #c9a4ec;
-  --accent-light: #875ebd;
-  --accent: rgb(74, 1, 134);
-  --accent-dark: #452b5e;
-  --accent-darker: #311246;
-  --accent-darkest: hwb(256 1% 91%);
-}
-
-:root {
   --gray-lightest: #f5f5f5;
   --gray-lighter: #e0e0e0;
   --gray-light: #c0c0c0;
@@ -20,37 +10,22 @@
 :root {
   --black: #0f1219;
   --white: #e7e5e5;
-
   --box-shadow: 0 2px 6px rgba(var(--gray), 25%),
     0 8px 24px rgba(var(--gray), 33%), 0 16px 32px rgba(var(--gray), 33%);
 }
-@font-face {
-  font-family: "Atkinson";
-  src: url("/fonts/atkinson-regular.woff") format("woff");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Atkinson";
-  src: url("/fonts/atkinson-bold.woff") format("woff");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
 
 body {
-  font-family: "Atkinson", sans-serif;
-  margin: 0;
+  /* font-family: "Atkinson", sans-serif; */
+  /* margin: 0;
   padding: 0;
   text-align: left;
   word-wrap: break-word;
   overflow-wrap: break-word;
-  color: var(--white);
+  color: var(--white); */
   font-size: 20px;
-  line-height: 1.7;
+  /* line-height: 1.7;
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr auto; */
 }
 
 main {
@@ -59,80 +34,7 @@ main {
   margin: auto;
   padding: 3em 1em;
 }
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  margin: 0 0 0.5rem 0;
-  color: var(--white);
-  line-height: 1.2;
-}
-h1 {
-  font-size: 3.052em;
-}
-h2 {
-  font-size: 2.441em;
-}
-h3 {
-  font-size: 1.953em;
-}
-h4 {
-  font-size: 1.563em;
-}
-h5 {
-  font-size: 1.25em;
-}
-strong,
-b {
-  font-weight: 700;
-}
-a {
-  color: var(--accent);
-}
-a:hover {
-  color: var(--accent);
-}
-p {
-  margin-bottom: 1em;
-}
-.prose p {
-  margin-bottom: 2em;
-}
-textarea {
-  width: 100%;
-  font-size: 16px;
-}
-input {
-  font-size: 16px;
-}
-table {
-  width: 100%;
-}
-img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 8px;
-}
-code {
-  padding: 2px 5px;
-  background-color: var(--gray-dark);
-  border-radius: 2px;
-}
-pre {
-  padding: 1.5em;
-  border-radius: 8px;
-}
-pre > code {
-  all: unset;
-}
-blockquote {
-  border-left: 4px solid var(--accent);
-  padding: 0 0 0 20px;
-  margin: 0px;
-  font-size: 1.333em;
-}
+
 hr {
   border: none;
   border-top: 1px solid var(--gray-light);
@@ -165,6 +67,5 @@ hr {
 }
 
 body {
-  background-blend-mode: hard-light;
   background-color: var(--accent-darkest);
 }
