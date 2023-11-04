@@ -1,0 +1,154 @@
+---
+import BaseHead from "@components/Layout/BaseHead.astro";
+import Header from "@components/Layout/Header.astro";
+import Footer from "@components/Layout/Footer.astro";
+import { SITE_TITLE, SITE_DESCRIPTION } from "../../consts";
+import { getCollection } from "astro:content";
+import FormattedDate from "@components/FormattedDate.astro";
+
+const posts = (await getCollection("blog")).sort(
+  (a, b) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf()
+);
+
+import { fade } from "astro:transitions";
+import "../../styles/anim.css";
+
+const anim2 = {
+  old: {
+    name: "fadeIn",
+    duration: "0.2s",
+    easing: "linear",
+    fillMode: "forwards",
+  },
+  new: {
+    name: "fadeOut",
+    duration: "0.3s",
+    easing: "linear",
+    fillMode: "backwards",
+  },
+};
+
+const anim = {
+  old: {
+    name: "zoom-in",
+    duration: "1s",
+    easing: "linear",
+    fillMode: "forwards",
+  },
+  new: {
+    name: "zoom-out",
+    duration: "1s",
+    easing: "linear",
+    fillMode: "bacjwards",
+  },
+};
+
+const zoom = {
+  forwards: anim,
+  backwards: anim2,
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+
+    <!-- .latex-dark {
+      --body-color: hsl(0, 0%, 86%);
+      --body-bg-color: hsl(0, 0%, 16%);
+      --link-visited: hsl(196 80% 77%);
+      --link-focus-outline: hsl(215, 63%, 73%);
+      --pre-bg-color: hsl(0, 1%, 25%);
+      --kbd-bg-color: hsl(0, 0%, 16%);
+      --kbd-border-color: hsl(210, 5%, 70%);
+      --table-border-color: white;
+      --sidenote-target-border-color: hsl(0, 0%, 59%);
+      --footnotes-border-color: hsl(0, 0%, 59%);
+      --proof-symbol-filter: invert(80%);
+    } -->
+    <style>
+      ul {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2rem;
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+      }
+      ul li {
+        width: calc(50% - 1rem);
+      }
+      ul li * {
+        text-decoration: none;
+        transition: 0.2s ease;
+      }
+      ul li img {
+        margin-bottom: 0.5rem;
+      }
+      ul li a {
+        display: block;
+      }
+      .title {
+        margin: 0;
+        color: var(--body-color);
+        line-height: 1;
+      }
+      .date {
+        margin: 0;
+        color: var(--kbd-border-color);
+      }
+      ul li a:hover h4,
+      ul li a:hover .date {
+        color: var(--body-color);
+      }
+
+      @media (max-width: 720px) {
+        ul {
+          gap: 0.5em;
+        }
+        ul li {
+          width: 100%;
+          text-align: center;
+        }
+        ul li:first-child {
+          margin-bottom: 0;
+        }
+        ul li:first-child .title {
+          font-size: 1.563em;
+        }
+      }
+    </style>
+  </head>
+  <body class="libertinus">
+    <Header />
+    <main>
+      <section>
+        <ul>
+          {
+            posts.map((post, i) => (
+              <li>
+                <a href={`/blog/${post.slug}/`}>
+                  <img
+                    transition:name={
+                      i < 3 ? `post-${post.data.pubDate}` : `${i}`
+                    }
+                    width={720}
+                    height={360}
+                    src={post.data.heroImage}
+                    alt=""
+                  />
+                  <h4 class="title">{post.data.title}</h4>
+                  <p class="date">
+                    <FormattedDate date={post.data.pubDate} />
+                  </p>
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+    </main>
+    <Footer />
+  </body>
+</html>
