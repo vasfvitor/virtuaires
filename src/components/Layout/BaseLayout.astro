@@ -1,0 +1,58 @@
+---
+import BaseHead from "@components/Layout/BaseHead.astro";
+
+import Header from "@components/Layout/Header.astro";
+import Footer from "@components/Layout/Footer.astro";
+
+import { SITE_TITLE, SITE_DESCRIPTION } from "../../consts";
+import { getCollection } from "astro:content";
+import FormattedDate from "@components/FormattedDate.astro";
+const isHomePage = Astro.url.pathname === "/";
+const { isRed } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+
+    <!-- .latex-dark {
+      --body-color: hsl(0, 0%, 86%);
+      --body-bg-color: hsl(0, 0%, 16%);
+      --link-visited: hsl(196 80% 77%);
+      --link-focus-outline: hsl(215, 63%, 73%);
+      --pre-bg-color: hsl(0, 1%, 25%);
+      --kbd-bg-color: hsl(0, 0%, 16%);
+      --kbd-border-color: hsl(210, 5%, 70%);
+      --table-border-color: white;
+      --sidenote-target-border-color: hsl(0, 0%, 59%);
+      --footnotes-border-color: hsl(0, 0%, 59%);
+      --proof-symbol-filter: invert(80%);
+    } -->
+    <style>
+      #dark-mode-toggle {
+        top: 1em;
+        right: 1em;
+        position: absolute;
+        z-index: 20;
+      }
+    </style>
+  </head>
+  <!-- <button id="dark-mode-toggle">Toggle theme</button>
+  <script>
+
+    window.addEventListener("load", (e) => {
+      const btn = document.querySelector(
+        "#dark-mode-toggle"
+      ) as HTMLButtonElement;
+      btn.addEventListener("click", () => {
+        document.body.classList.toggle("latex-dark");
+      });
+    });
+  </script> -->
+  <body class="libertinus latex-dark-auto " class:list={[{ "latex-dark": isHomePage }]}>
+    <Header title={SITE_TITLE} />
+    <slot />
+    <Footer />
+  </body>
+</html>

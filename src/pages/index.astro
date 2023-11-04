@@ -1,92 +1,84 @@
 ---
-import BaseHead from "../components/BaseHead.astro";
-import Header from "../components/Header.astro";
-import Footer from "../components/Footer.astro";
 import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
+import BaseLayout from "@components/Layout/BaseLayout.astro";
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <style>
-      body {
-        display: flex;
-        flex-direction: column;
-      }
-      h1 {
-        font-size: 3rem;
-        margin-top: auto;
-        margin-bottom: auto;
-        z-index: 60;
-        text-shadow:
-          var(--black) 2px 2px 0px,
-          var(--black) 4px 4px 0px;
-        color: var(--white);
-      }
-      .hero {
-        z-index: 30;
-        display: flex;
-        justify-content: center;
-        position: relative;
-      }
-      .center {
-        margin-left: auto;
-        margin-right: auto;
-      }
-      .circle {
-        z-index: 40;
-        position: absolute;
-        border-radius: 999px;
-        background: radial-gradient(
-          circle at 90% 50%,
-          rgba(255, 255, 255, 0),
-          rgb(0, 0, 0)
-        );
-      }
+<style>
+  body {
+    display: flex;
+    flex-direction: column;
+  }
+  h1 {
+    font-size: 3rem;
+    margin-top: auto;
+    margin-bottom: auto;
+    z-index: 60;
+    text-shadow:
+      var(--black) 2px 2px 0px,
+      var(--black) 4px 4px 0px;
+    color: var(--white);
+  }
+  .hero {
+    z-index: 30;
+    display: flex;
+    justify-content: center;
+    position: relative;
+  }
+  .center {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .circle {
+    z-index: 40;
+    position: absolute;
+    border-radius: 999px;
+    background: radial-gradient(
+      circle at 90% 50%,
+      rgba(255, 255, 255, 0),
+      rgb(0, 0, 0)
+    );
+  }
 
-      :root {
-        --width: 320px;
-        --width-1-2: calc(var(--width) / 2);
-        --width-1-4: calc(var(--width) / 4);
-        --width-1-8: calc(var(--width) / 8);
-      }
-      .circle-first {
-        width: var(--width);
-        height: var(--width);
-        left: var(--width-1-2);
-        top: calc(var(--width-1-8) * -1);
-      }
-      .circle-second {
-        width: var(--width-1-2);
-        height: var(--width-1-2);
-        left: var(--width-1-2);
-        top: var(--width-1-4);
-      }
-      .circle-final {
-        width: var(--width-1-4);
-        height: var(--width-1-4);
-        left: var(--width-1-4);
-        top: var(--width-1-8);
-      }
-    </style>
-    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-  </head>
+  :root {
+    --width: 320px;
+    --width-1-2: calc(var(--width) / 2);
+    --width-1-4: calc(var(--width) / 4);
+    --width-1-8: calc(var(--width) / 8);
+  }
+  .circle-first {
+    width: var(--width);
+    height: var(--width);
+    left: var(--width-1-2);
+    top: calc(var(--width-1-8) * -1);
+  }
+  .circle-second {
+    width: var(--width-1-2);
+    height: var(--width-1-2);
+    left: var(--width-1-2);
+    top: var(--width-1-4);
+  }
+  .circle-final {
+    width: var(--width-1-4);
+    height: var(--width-1-4);
+    left: var(--width-1-4);
+    top: var(--width-1-8);
+  }
+</style>
 
-  <body class="libertinus latex-dark">
-    <Header title={SITE_TITLE} />
-    <main>
-      <section class="hero" style="">
-        <h1>
-          Improve, fix &<br />document code.
-        </h1>
-        <div class="circle circle-first">
-          <div class="circle circle-second">
-            <div class="circle circle-final"></div>
-          </div>
+<BaseLayout>
+  <main>
+    <section class="hero" style="">
+      <h1>
+        Improve, fix &<br />document code.
+      </h1>
+      <div class="circle circle-first">
+        <div class="circle circle-second">
+          <div class="circle circle-final"></div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- <div class="">x</div>
+    <!-- <div class="">x</div>
       <section class="">
         TODO: THIS
         <div>
@@ -98,7 +90,5 @@ import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
           <p>I'm sorry Dave, I'm afraid I can't do that</p>
         </div>
       </section> -->
-    </main>
-    <Footer />
-  </body>
-</html>
+  </main>
+</BaseLayout>

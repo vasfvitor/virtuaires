@@ -1,13 +1,22 @@
 ---
 import Layout from "../layouts/BlogPost.astro";
+import { Image } from "astro:assets";
 ---
 
 <Layout
   title="About Me"
   description="Lorem ipsum dolor sit amet"
   pubDate={new Date("August 08 2021")}
-  heroImage="/blog-placeholder-about.jpg"
+  heroImage="src/assets/images/bg-dolphin.jpg"
 >
+  Photo by <a
+    href="https://unsplash.com/@jeremydgreat?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash"
+    >Jeremy Ricketts</a
+  > on <a
+    href="https://unsplash.com/photos/two-whales-rushing-into-the-water-d93dJ4kehUg?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash"
+    >Unsplash</a
+  >
+
   <p>
     Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
     tempor incididunt ut labore et dolore magna aliqua. Vitae ultricies leo
