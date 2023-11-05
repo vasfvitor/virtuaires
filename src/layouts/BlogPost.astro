@@ -33,7 +33,7 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
         max-width: calc(100% - 2em);
         margin: auto;
         padding: 1em;
-        color: var(--gray-light);
+        color: var(--kbd-border-color);
       } */
       .title {
         margin-bottom: 1em;
@@ -41,9 +41,7 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
         text-align: center;
         line-height: 1;
       }
-      .title h1 {
-        margin: 0 0 0.5em 0;
-      }
+
       .date {
         margin-bottom: 0.5em;
         color: var(--footnotes-border-color);
@@ -54,7 +52,7 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
     </style>
   </head>
 
-  <body class="libertinus latex-dark-auto ">
+  <body class="libertinus latex-dark-auto">
     <Header />
     <main>
       <article>
@@ -71,7 +69,7 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
             )
           }
         </div>
-        <div class="prose">
+        <div>
           <div class="title">
             <div class="date">
               <FormattedDate date={pubDate} />

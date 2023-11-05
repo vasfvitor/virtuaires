@@ -1,0 +1,102 @@
+---
+import { SITE_TITLE } from "../../consts";
+import { fade } from "astro:transitions";
+const page = Astro.url.pathname;
+---
+
+<header>
+  <label for="menu" class="sidenote-toggle">☰</label>
+  <input type="checkbox" id="menu" class="sidenote-toggle" />
+
+  <span class="sidenote">
+    <nav>
+      <ul>
+        <li aria-current={page === "/" ? "page" : undefined}>
+          <a href="/">Home</a>
+        </li>
+        <li aria-current={page.startsWith("/blog") ? "page" : undefined}>
+          <a href="/blog">Blog</a>
+        </li>
+        <li aria-current={page === "/about" ? "page" : undefined}>
+          <a href="/about">About</a>
+        </li>
+      </ul>
+    </nav>
+  </span>
+</header>
+<style lang="scss">
+  @media (max-width: 1050px) {
+    header {
+      width: 1050px;
+    }
+    .sidenote-toggle {
+      margin-left: 6rem;
+      padding: 4px;
+    }
+    header {
+      position: block;
+      margin: auto;
+      margin-left: 2rem;
+      left: 0;
+    }
+    .sidenote {
+      position: relative;
+    }
+  }
+
+  header {
+    margin-bottom: 3rem;
+    max-width: 90vw;
+    margin-left: -5rem;
+    top: 4rem;
+  }
+
+  .sidenote {
+    position: absolute;
+    z-index: 22;
+    left: 0;
+  }
+
+  ul {
+    height: 2em;
+  }
+
+  nav li:before {
+    content: " ";
+    counter-increment: 0;
+    padding-right: 0;
+  }
+
+  li {
+    position: relative;
+    height: 100%;
+  }
+
+  li[aria-current="page"]::before {
+    --size: 7px;
+    content: "";
+    width: 0;
+    height: 0;
+    position: absolute;
+    left: 0;
+    top: calc(40% - var(--size));
+    border: var(--size) solid transparent;
+    border-left: var(--size) solid var(--kbd-border-color);
+  }
+
+  a[aria-current="page"] {
+    text-decoration: underline;
+  }
+
+  nav a {
+    padding: 0 0.5rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: color 0.2s linear;
+  }
+
+  a:hover {
+    color: var(--link-focus-outline);
+  }
+</style>

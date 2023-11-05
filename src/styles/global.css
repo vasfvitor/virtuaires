@@ -1,51 +1,10 @@
-:root {
-  --gray-lightest: #f5f5f5;
-  --gray-lighter: #e0e0e0;
-  --gray-light: #c0c0c0;
-  --gray: #808080;
-  --gray-dark: #404040;
-  --gray-darker: #202020;
-  --gray-darkest: #101010;
-}
-:root {
-  --black: #0f1219;
-  --white: #e7e5e5;
-  --box-shadow: 0 2px 6px rgba(var(--gray), 25%),
-    0 8px 24px rgba(var(--gray), 33%), 0 16px 32px rgba(var(--gray), 33%);
-}
-
-body {
-  /* font-family: "Atkinson", sans-serif; */
-  /* margin: 0;
-  padding: 0;
-  text-align: left;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  color: var(--white); */
-  font-size: 20px;
-  /* line-height: 1.7;
-  display: grid;
-  grid-template-rows: auto 1fr auto; */
-}
-
 main {
-  width: 720px;
-  max-width: calc(100% - 2em);
   margin: auto;
-  padding: 3em 1em;
 }
 
 hr {
   border: none;
-  border-top: 1px solid var(--gray-light);
-}
-@media (max-width: 720px) {
-  body {
-    font-size: 18px;
-  }
-  main {
-    padding: 1em;
-  }
+  border-top: 1px solid var(--kbd-border-color);
 }
 
 .sr-only {
@@ -64,8 +23,4 @@ hr {
   clip-path: inset(50%);
   /* added line to stop words getting smushed together (as they go onto seperate lines and some screen readers do not understand line feeds as a space */
   white-space: nowrap;
-}
-
-body {
-  background-color: var(--accent-darkest);
 }

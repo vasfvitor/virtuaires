@@ -1,52 +1,16 @@
 ---
 import { getCollection } from "astro:content";
 import FormattedDate from "@components/FormattedDate.astro";
-
+import { SITE_TITLE, SITE_DESCRIPTION } from "~/consts";
 const posts = (await getCollection("blog")).sort(
   (a, b) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf()
 );
 
-import { fade } from "astro:transitions";
 import "~/styles/anim.css";
 import BaseLayout from "@components/Layout/BaseLayout.astro";
-
-const anim2 = {
-  old: {
-    name: "fadeIn",
-    duration: "0.2s",
-    easing: "linear",
-    fillMode: "forwards",
-  },
-  new: {
-    name: "fadeOut",
-    duration: "0.3s",
-    easing: "linear",
-    fillMode: "backwards",
-  },
-};
-
-const anim = {
-  old: {
-    name: "zoom-in",
-    duration: "1s",
-    easing: "linear",
-    fillMode: "forwards",
-  },
-  new: {
-    name: "zoom-out",
-    duration: "1s",
-    easing: "linear",
-    fillMode: "bacjwards",
-  },
-};
-
-const zoom = {
-  forwards: anim,
-  backwards: anim2,
-};
 ---
 
-<BaseLayout>
+<BaseLayout {SITE_TITLE} {SITE_DESCRIPTION}>
   <main>
     <section>
       <ul>

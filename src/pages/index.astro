@@ -1,5 +1,5 @@
 ---
-import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
+import { SITE_TITLE, SITE_DESCRIPTION } from "~/consts";
 import BaseLayout from "@components/Layout/BaseLayout.astro";
 ---
 
@@ -20,8 +20,8 @@ import BaseLayout from "@components/Layout/BaseLayout.astro";
   }
   .hero {
     z-index: 30;
-    display: flex;
-    justify-content: center;
+    display: grid;
+    place-content: center;
     position: relative;
   }
   .center {
@@ -63,14 +63,20 @@ import BaseLayout from "@components/Layout/BaseLayout.astro";
     left: var(--width-1-4);
     top: var(--width-1-8);
   }
+
+  .main {
+  }
 </style>
 
-<BaseLayout>
+<BaseLayout {SITE_TITLE} {SITE_DESCRIPTION}>
   <main>
-    <section class="hero" style="">
-      <h1>
-        Improve, fix &<br />document code.
-      </h1>
+    <section class="hero">
+      <div style="z-index: 60;">
+        <h1>Vitor Ayres</h1>
+        <h2 style="text-align:center;">
+          I Improve, fix &<br />document code.
+        </h2>
+      </div>
       <div class="circle circle-first">
         <div class="circle circle-second">
           <div class="circle circle-final"></div>
