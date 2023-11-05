@@ -1,6 +1,15 @@
 ---
 import { SITE_TITLE, SITE_DESCRIPTION } from "~/consts";
 import BaseLayout from "@components/Layout/BaseLayout.astro";
+import Image from "@components/Image.astro";
+//import { Image } from "astro:assets";
+
+import bandeiras1 from "/src/assets/projects/bandeiras1.gif";
+import bandeiras2 from "/src/assets/projects/bandeiras2.gif";
+import bandeiras3 from "/src/assets/projects/bandeiras3.jpg";
+
+import ea from "/src/assets/projects/ea-demo.jpg";
+import Project from "@components/Project.astro";
 ---
 
 <style>
@@ -16,9 +25,9 @@ import BaseLayout from "@components/Layout/BaseLayout.astro";
     text-shadow:
       var(--black) 2px 2px 0px,
       var(--black) 4px 4px 0px;
-    color: var(--white);
   }
   .hero {
+    height: 45vh;
     z-index: 30;
     display: grid;
     place-content: center;
@@ -63,9 +72,6 @@ import BaseLayout from "@components/Layout/BaseLayout.astro";
     left: var(--width-1-4);
     top: var(--width-1-8);
   }
-
-  .main {
-  }
 </style>
 
 <BaseLayout {SITE_TITLE} {SITE_DESCRIPTION}>
@@ -84,17 +90,37 @@ import BaseLayout from "@components/Layout/BaseLayout.astro";
       </div>
     </section>
 
-    <!-- <div class="">x</div>
-      <section class="">
-        TODO: THIS
-        <div>
-          <h2>About Me</h2>
-          <p>
-            Lemme ask AI <br /> - Hey, tell about me, omit my secrets
-          </p>
-          <p class="">typing...</p>
-          <p>I'm sorry Dave, I'm afraid I can't do that</p>
-        </div>
-      </section> -->
+    <section>
+      <h2>Projects</h2>
+
+      <Project
+        title="Bandeiras do Brazil"
+        desc="Showcases flags and coat of arms from each Brazil state. Plus, there's a quiz where one can play to try and guess all flags by name."
+        url="https://bandeiras.pages.dev/"
+        made="Astro, Tailwind CSS and Typescript"
+      >
+        <Image src={bandeiras1} alt="Gif showcasing website map of Brazil" />
+
+        <br />
+        <Image
+          src={bandeiras3}
+          alt="Image from Tocatins (Brazilian State) flag and coat of arms"
+        />
+      </Project>
+
+      <Project
+        title="Custom MT5 Expert Advisor"
+        desc="MetaTrader 5 Expert Advisor - EA, made according to client's personal strategy and definition. Closed Source."
+        made="MQL5 (MetaQuotes Language 5), a C++ syntax like language"
+      >
+        <Image src={ea} alt="Demo image from the EA" />
+      </Project>
+      <Project
+        title="Runas"
+        desc="Animated webapp showing Norse Runes from the Elder Futhark, it also han an divination askjdalskjd"
+        url="https://brusguer.pages.dev"
+        made="Vite, Svelte components, Tailwind CSS and Typescript"
+      />
+    </section>
   </main>
 </BaseLayout>
