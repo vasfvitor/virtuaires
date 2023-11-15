@@ -23,11 +23,11 @@ import Project from "@components/Project.astro";
     margin-bottom: auto;
     z-index: 60;
     text-shadow:
-      var(--black) 2px 2px 0px,
-      var(--black) 4px 4px 0px;
+      var(--black) 2px 2px 0,
+      var(--black) 4px 4px 0;
   }
   .hero {
-    height: 45vh;
+    margin-block: 100px;
     z-index: 30;
     display: grid;
     place-content: center;
@@ -36,6 +36,58 @@ import Project from "@components/Project.astro";
   .center {
     margin-left: auto;
     margin-right: auto;
+  }
+
+  :root {
+    --width: 320px;
+    --width-1-2: calc(var(--width) / 2);
+    --width-1-4: calc(var(--width) / 4);
+    --width-1-8: calc(var(--width) / 8);
+  }
+
+  @media (max-width: 720px) {
+    :root {
+      --width: 160px;
+    }
+  }
+
+  @keyframes enter-2 {
+    0% {
+      transform: translate(-2000px, 0);
+    }
+    100% {
+      transform: translate(0);
+    }
+  }
+  /* 
+  @media (prefers-reduced-motion) {
+  } */
+
+  @keyframes enter-1 {
+    from {
+      transform: translate(1000px, -2000px);
+    }
+    to {
+      transform: translate(0);
+    }
+  }
+
+  @keyframes reveal {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes scale-in {
+    from {
+      transform: scale(0);
+    }
+    to {
+      transform: scale(1);
+    }
   }
   .circle {
     z-index: 40;
@@ -48,39 +100,42 @@ import Project from "@components/Project.astro";
     );
   }
 
-  :root {
-    --width: 320px;
-    --width-1-2: calc(var(--width) / 2);
-    --width-1-4: calc(var(--width) / 4);
-    --width-1-8: calc(var(--width) / 8);
-  }
-  .circle-first {
+  .hero > .circle.circle-first {
     width: var(--width);
     height: var(--width);
     left: var(--width-1-2);
     top: calc(var(--width-1-8) * -1);
+    transition: all;
+    animation: scale-in 1618ms cubic-bezier(0, 0.71, 0, 0.98);
   }
-  .circle-second {
+
+  .circle.circle-first > .circle.circle-second {
     width: var(--width-1-2);
     height: var(--width-1-2);
     left: var(--width-1-2);
     top: var(--width-1-4);
+    animation: enter-1 1618ms cubic-bezier(0, 0.71, 0, 0.98);
   }
   .circle-final {
     width: var(--width-1-4);
     height: var(--width-1-4);
     left: var(--width-1-4);
     top: var(--width-1-8);
+    transition: all;
+    animation: enter-2 1618ms cubic-bezier(0, 0.71, 0, 0.98);
+  }
+  .reveal {
+    animation: reveal 1618ms cubic-bezier(1, 0, 0.83, 0.67);
   }
 </style>
 
 <BaseLayout {SITE_TITLE} {SITE_DESCRIPTION}>
   <main>
-    <section class="hero">
-      <div style="z-index: 60;">
+    <section class="hero reveal">
+      <div style="z-index: 60">
         <h1>Vitor Ayres</h1>
         <h2 style="text-align:center;">
-          I Improve, fix &<br />document code.
+          Improve, fix &<br />document code.
         </h2>
       </div>
       <div class="circle circle-first">
@@ -91,10 +146,12 @@ import Project from "@components/Project.astro";
     </section>
 
     <section>
-      <h2>Projects</h2>
+      <br />
+      <br />
+      <h2>Highlights</h2>
 
       <Project
-        title="Bandeiras do Brazil"
+        title="Bandeiras do Brasil"
         desc="Showcases flags and coat of arms from each Brazil state. There's a quiz where one can play to try and guess all flags by name."
         url="https://bandeiras.pages.dev/"
         made="Astro, Tailwind CSS and Typescript"
