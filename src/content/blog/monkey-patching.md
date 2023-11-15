@@ -7,7 +7,7 @@ heroImage: "/src/assets/images/bg-1.png"
 
 # Why
 
-I have a list of subjects, titles and ideas to make a post here. The first one is Monkey Patch, why? Because it's the only that appeared twice in the list and is the most recent addition, so FIFO it.
+I have a list of subjects, titles and ideas to make a post here. The first one is Monkey Patch, why? Because it's the only that appeared twice in the list and is the most recent addition, so LIFO it.
 
 Before diving in, I wonder why it is called Monkey Patch, and by it I already associate with a monkey would do, but a monkey can't code...
 
