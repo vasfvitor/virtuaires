@@ -103,8 +103,9 @@ import Project from "@components/Project.astro";
   .hero > .circle.circle-first {
     width: var(--width);
     height: var(--width);
-    left: var(--width-1-2);
-    top: calc(var(--width-1-8) * -1);
+    right: 10%;
+
+    top: 0;
     transition: all;
     animation: scale-in 1618ms cubic-bezier(0, 0.71, 0, 0.98);
   }
@@ -133,9 +134,9 @@ import Project from "@components/Project.astro";
   <main>
     <section class="hero reveal">
       <div style="z-index: 60">
-        <h1>Vitor Ayres</h1>
+        <h1>111</h1>
         <h2 style="text-align:center;">
-          Improve, fix &<br />document code.
+          Write, improve, fix<br /> & document code.
         </h2>
       </div>
       <div class="circle circle-first">
@@ -154,7 +155,7 @@ import Project from "@components/Project.astro";
         title="Bandeiras do Brasil"
         desc="Showcases flags and coat of arms from each Brazil state. There's a quiz where one can play to try and guess all flags by name."
         url="https://bandeiras.pages.dev/"
-        made="Astro, Tailwind CSS and Typescript"
+        made="Astro, Tailwind and Typescript"
       >
         <Image src={bandeiras1} alt="Gif showcasing website map of Brazil" />
 
@@ -167,21 +168,21 @@ import Project from "@components/Project.astro";
 
       <Project
         title="Custom MT5 Expert Advisor"
-        desc="MetaTrader 5 Expert Advisor - EA, made according to client's personal strategy and definition. Closed Source."
-        made="MQL5 (MetaQuotes Language 5), a C++ syntax like language"
+        desc="MetaTrader 5 Expert Advisor - EA, made according to client's personal strategy and definitions. Closed Source."
+        made="MQL5 (MetaQuotes Language 5), a C++ syntax language with OOP"
       >
         <Image src={ea} alt="Demo image from the EA" />
       </Project>
       <Project
         title="Elder Futhark"
-        desc="Animated webapp showing Norse Runes from the Elder Futhark, it also have a divination tool"
-        url="https://ru.pages.dev"
-        made="Vite, Svelte components, Tailwind CSS and Typescript"
+        desc="Animated webapp showing animated cards Runes from Norse Elder Futhark"
+        url="https://runes.pages.dev"
+        made="Vite, Svelte, Flowbite, Typescript and original card designs"
       />
-      <Project
+      <!-- <Project
         title="Open Source Contributions"
-        desc="Contributing back to awesome open source projects that I utilize or that I just find it interesting to work on or have a warming community. Besides bug fixes, writing documentation, helping to implement features I also try and support on discord channels and maintaining docs translated and up to date in my native language, when feasible."
-      />
+        desc="Giving back to open source projects that I utilize or that's interesting to work on. "
+      /> -->
       <br />
       <p>See more on <a href="https://github.com/vasfvitor/">GitHub</a></p>
     </section>
