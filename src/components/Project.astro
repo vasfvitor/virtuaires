@@ -15,11 +15,31 @@ const id = title.replaceAll(" ", "");
   .wrapper {
     margin-top: 4rem;
   }
+
+  h3 {
+    position: relative;
+  }
+    
+  h3::before {
+    top:-15px;
+    left: -30px;
+    content: "";
+    height: 40px;
+    width: 40px;
+    position: absolute;
+    background-image: url("/bg.svg");
+    background-position: top;
+    background-repeat: no-repeat;
+    background-size: contain;
+    z-index: -20;
+  }
 </style>
+
 <div class="wrapper">
   <a href={url}><h3>{title}</h3></a>
+
   <article>
-    <slot name="description" />
+    <slot name="description" /> 
     {desc}
     {
       made && (

@@ -5,7 +5,7 @@ import Image from "@components/Image.astro";
 //import { Image } from "astro:assets";
 
 import bandeiras1 from "/src/assets/projects/bandeiras1.gif";
-import bandeiras2 from "/src/assets/projects/bandeiras2.gif";
+//import bandeiras2 from "/src/assets/projects/bandeiras2.gif";
 import bandeiras3 from "/src/assets/projects/bandeiras3.jpg";
 
 import ea from "/src/assets/projects/ea-demo.jpg";
@@ -19,15 +19,11 @@ import Project from "@components/Project.astro";
   }
   h1 {
     font-size: 3rem;
-    margin-top: auto;
-    margin-bottom: auto;
-    z-index: 60;
-    text-shadow:
-      var(--black) 2px 2px 0,
-      var(--black) 4px 4px 0;
   }
+
   .hero {
-    margin-block: 100px;
+    color: white;
+    padding-block: 100px;
     z-index: 30;
     display: grid;
     place-content: center;
@@ -43,12 +39,6 @@ import Project from "@components/Project.astro";
     --width-1-2: calc(var(--width) / 2);
     --width-1-4: calc(var(--width) / 4);
     --width-1-8: calc(var(--width) / 8);
-  }
-
-  @media (max-width: 720px) {
-    :root {
-      --width: 160px;
-    }
   }
 
   @keyframes enter-2 {
@@ -94,18 +84,21 @@ import Project from "@components/Project.astro";
     position: absolute;
     border-radius: 999px;
     background: radial-gradient(
-      circle at 90% 50%,
-      rgba(255, 255, 255, 0),
-      rgb(0, 0, 0)
+      circle at 90% 20%,
+      rgba(0, 0, 0, 0),
+      hsla(50, 100%, 65%, 0.2)
     );
   }
-
-  .hero > .circle.circle-first {
+  .wrapper {
+    display: grid;
+    place-content: center;
+    width: 100%;
+    overflow-y: hidden;
+  }
+  .wrapper > .circle.circle-first {
     width: var(--width);
     height: var(--width);
-    right: 10%;
-
-    top: 0;
+    top: 80px;
     transition: all;
     animation: scale-in 1618ms cubic-bezier(0, 0.71, 0, 0.98);
   }
@@ -131,25 +124,26 @@ import Project from "@components/Project.astro";
 </style>
 
 <BaseLayout {SITE_TITLE} {SITE_DESCRIPTION}>
-  <main>
-    <section class="hero reveal">
-      <div style="z-index: 60">
-        <h1>111</h1>
-        <h2 style="text-align:center;">
-          Write, improve, fix<br /> & document code.
-        </h2>
-      </div>
+  <header class="hero reveal">
+    <div style="z-index: 60">
+      <h1>111</h1>
+      <h2 style="text-align:center;">
+        Write, improve, fix<br /> & document code.
+      </h2>
+    </div>
+    <div class="wrapper">
       <div class="circle circle-first">
         <div class="circle circle-second">
           <div class="circle circle-final"></div>
         </div>
       </div>
-    </section>
-
-    <section>
+    </div>
+  </header>
+  <main>
+    <section class="projects">
       <br />
       <br />
-      <h2>Highlights</h2>
+      <h2>Projects</h2>
 
       <Project
         title="Bandeiras do Brasil"
@@ -174,7 +168,7 @@ import Project from "@components/Project.astro";
         <Image src={ea} alt="Demo image from the EA" />
       </Project>
       <Project
-        title="Elder Futhark"
+        title="Elder Futhark Runes"
         desc="Animated webapp showing animated cards Runes from Norse Elder Futhark"
         url="https://runes.pages.dev"
         made="Vite, Svelte, Flowbite, Typescript and original card designs"
@@ -188,9 +182,8 @@ import Project from "@components/Project.astro";
     </section>
     <section>
       <h2>Get in touch</h2>
-      <a href="mailto:vasfvitor@virtuaires.com.br">Send an email</a>, reach me
-      on <a href="https://www.linkedin.com/in/ayresvitor/">LinkedIn</a> or leave
-      an anonymous message:
+      <a href="mailto:vasfvitor@virtuaires.com.br">Send an email</a> or reach me
+      on <a href="https://www.linkedin.com/in/ayresvitor/">LinkedIn</a>
     </section>
   </main>
 </BaseLayout>

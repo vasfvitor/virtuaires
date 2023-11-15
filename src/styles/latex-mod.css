@@ -61,10 +61,10 @@
 }
 
 :root {
-  --body-color: hsl(0, 5%, 10%);
+  --body-color: hsl(50, 5%, 10%);
   --body-bg-color: hsl(210, 20%, 98%);
-  --link-visited: hsl(0, 100%, 33%);
-  --link-focus-outline: hsl(220, 90%, 52%);
+  --link-visited: hsl(50, 100%, 33%);
+  --link-focus-outline: hsl(50, 89%, 52%);
   --pre-bg-color: hsl(210, 28%, 93%);
   --kbd-bg-color: hsl(210, 5%, 100%);
   --kbd-border-color: hsl(210, 5%, 70%);
@@ -72,7 +72,7 @@
   --border-width-thin: 1.36px;
   --border-width-thick: 2.27px;
   --sidenote-target-border-color: hsl(55, 55%, 70%);
-  --footnotes-border-color: hsl(0, 0%, 39%);
+  --footnotes-border-color: hsl(50, 0%, 39%);
   --text-indent-size: 1.463rem; /* In 12pt [Latin Modern font] LaTeX article
   \parindent =~ 17.625pt; taking also into account the ratio
   1pt[LaTeX] = (72 / 72.27) * 1pt[HTML], with default 12pt/1rem LaTeX.css font
@@ -81,31 +81,33 @@
 }
 
 .latex-dark {
-  --body-color: hsl(0, 0%, 86%);
-  --body-bg-color: hsl(0, 0%, 16%);
-  --link-visited: hsl(196 80% 77%);
-  --link-focus-outline: hsl(215, 63%, 73%);
-  --pre-bg-color: hsl(0, 1%, 25%);
-  --kbd-bg-color: hsl(0, 0%, 16%);
-  --kbd-border-color: hsl(210, 5%, 70%);
+  --body-color: hsl(50, 0%, 86%);
+  --body-bg-color: hsl(50, 0%, 16%);
+  --link-visited: hsl(50 80% 77%);
+  --link-focus-outline: hsl(50, 63%, 73%);
+  --pre-bg-color: hsl(50, 1%, 25%);
+  --kbd-bg-color: hsl(50, 0%, 16%);
+  --kbd-border-color: hsl(50, 5%, 70%);
   --table-border-color: white;
-  --sidenote-target-border-color: hsl(0, 0%, 59%);
-  --footnotes-border-color: hsl(0, 0%, 59%);
+  --sidenote-target-border-color: hsl(50, 0%, 59%);
+  --footnotes-border-color: hsl(50, 0%, 59%);
   --proof-symbol-filter: invert(80%);
 }
 
 @media (prefers-color-scheme: dark) {
   .latex-dark-auto {
-    --body-color: hsl(0, 0%, 86%);
-    --body-bg-color: hsl(0, 0%, 16%);
-    --link-visited: hsl(196 80% 77%);
-    --link-focus-outline: hsl(215, 63%, 73%);
-    --pre-bg-color: hsl(0, 1%, 25%);
-    --kbd-bg-color: hsl(0, 0%, 16%);
-    --kbd-border-color: hsl(210, 5%, 70%);
+    --base: #ffe14d77;
+    /* --base: hsl(50, 100%, 65%); */
+    --body-color: hsl(50, 0%, 86%);
+    --body-bg-color: hsl(50, 0%, 16%);
+    --link-visited: hsl(50, 80%, 77%);
+    --link-focus-outline: hsl(50, 63%, 73%);
+    --pre-bg-color: hsl(50, 1%, 25%);
+    --kbd-bg-color: hsl(50, 0%, 16%);
+    --kbd-border-color: hsl(50, 5%, 70%);
     --table-border-color: white;
-    --sidenote-target-border-color: hsl(0, 0%, 59%);
-    --footnotes-border-color: hsl(0, 0%, 59%);
+    --sidenote-target-border-color: hsl(50, 0%, 59%);
+    --footnotes-border-color: hsl(50, 0%, 59%);
     --proof-symbol-filter: invert(80%);
   }
 }
