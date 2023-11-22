@@ -556,7 +556,7 @@ input.sidenote-toggle {
   display: none;
 }
 
-@media (max-width: 1050px) {
+@media (max-width: 1200px) {
   label.sidenote-toggle:not(.sidenote-number) {
     display: inline;
   }
