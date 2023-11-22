@@ -7,7 +7,6 @@ interface Props {
 }
 
 const { title, url, desc, made } = Astro.props;
-
 const id = title.replaceAll(" ", "");
 ---
 
@@ -15,9 +14,12 @@ const id = title.replaceAll(" ", "");
   .wrapper {
     margin-top: 3rem;
   }
+  a {
+    display: block;
+    width: fit-content;
+  }
 
   h3 {
-    width: fit-content;
     position: relative;
     margin: 0;
   }
@@ -35,18 +37,20 @@ const id = title.replaceAll(" ", "");
     background-size: contain;
     z-index: -20;
   }
-
   h3::after {
     content: "";
     position: absolute;
     width:160vw;
     bottom: 0;
-    border: 10px dotted rgba(0, 0, 0, 0.1);
-    z-index: -2;
-    height: 1em;
+    border:0;
+    border-top: 10px dotted rgba(0, 0, 0, 0.1);
+    border-bottom: 12px dotted rgba(0, 0, 0, 0.1);
+    z-index: -30;
+    height: 0.7em;
     left:-50vw;
     pointer-events: none;
   }
+
 
 
 </style>
