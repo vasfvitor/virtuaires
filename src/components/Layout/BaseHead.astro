@@ -4,7 +4,7 @@
 import "~/styles/global.css";
 import "~/styles/latex-mod.css";
 
-import { ViewTransitions } from "astro:transitions";
+// import { ViewTransitions } from "astro:transitions";
 
 interface Props {
   title: string;
@@ -46,6 +46,18 @@ const { title, description, image = "/Vitor.jpg" } = Astro.props;
 <meta property="twitter:title" content={title} />
 <meta property="twitter:description" content={description} />
 <meta property="twitter:image" content={new URL(image, Astro.url)} />
-
+<style>
+  body {
+  font-family: "Libertinus", Georgia, Cambria, "Times New Roman", Times, serif;
+  line-height: 1.8;
+  max-width: 80ch;
+  min-height: 100vh;
+  overflow-x: hidden;
+  margin: 0 auto;
+  padding: 2rem 1.25rem;
+  color: var(--body-color);
+  background-color: var(--body-bg-color);
+  text-rendering: optimizeLegibility;
+}
 </style>
 <!-- <ViewTransitions /> -->
