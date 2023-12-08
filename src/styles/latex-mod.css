@@ -140,7 +140,8 @@ html {
 }
 
 body {
-  font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+  /* font-family: Georgia, Cambria, "Times New Roman", Times, serif; */
+  font-family: serif;
   line-height: 1.8;
   max-width: 80ch;
   min-height: 100vh;
