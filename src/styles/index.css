@@ -20,7 +20,7 @@ h2:not(.lead)::after {
   bottom: 4px;
   width: 100%;
   left: 0;
-  color: hsla(50, 100%, 65%, 0.1);
+  color: hsla(50, 100%, 65%, 0.12);
 }
 
 .about-me p {
@@ -56,6 +56,13 @@ h2:not(.lead)::after {
   --width-1-4: calc(var(--width) / 4);
   --width-1-8: calc(var(--width) / 8);
 }
+
+@media only screen and (max-width: 600px) {
+  :root {
+    --width: 220px;
+  }
+}
+
 
 .circle::after {
   opacity: 0;
