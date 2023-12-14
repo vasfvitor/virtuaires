@@ -20,7 +20,7 @@ h2:not(.lead)::after {
   bottom: 4px;
   width: 100%;
   left: 0;
-  color: hsla(50, 100%, 65%, 0.12);
+  color: hsla(50, 100%, 0%, 0.1);
 }
 
 .about-me p {

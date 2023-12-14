@@ -78,11 +78,12 @@
   1pt[LaTeX] = (72 / 72.27) * 1pt[HTML], with default 12pt/1rem LaTeX.css font
   size, the identation value in rem CSS units is: 
   \parindent =~ 17.625 * (72 / 72.27) / 12 = 1.463rem. */
+  /* TODO: Recalculate this */
 }
 
 .latex-dark {
   --body-color: hsl(50, 0%, 86%);
-  --body-bg-color: hsl(50, 0%, 16%);
+  --body-bg-color: hsl(0, 0%, 14%);
   --link-visited: hsl(50 80% 77%);
   --link-focus-outline: hsl(50, 63%, 73%);
   --pre-bg-color: hsl(50, 1%, 25%);
@@ -99,7 +100,7 @@
     --base: #ffe14d77;
     /* --base: hsl(50, 100%, 65%); */
     --body-color: hsl(50, 0%, 86%);
-    --body-bg-color: hsl(50, 0%, 16%);
+    --body-bg-color: hsl(0, 0%, 14%);
     --link-visited: hsl(50, 80%, 77%);
     --link-focus-outline: hsl(50, 63%, 73%);
     --pre-bg-color: hsl(50, 1%, 25%);

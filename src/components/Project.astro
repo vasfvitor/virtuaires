@@ -43,9 +43,8 @@ const id = title.replaceAll(" ", "");
     content: "";
     position: absolute;
     border:0;
-    border-top: 10px dotted rgba(0, 0, 0, 0.1);
-    border-bottom: 12px dotted rgba(0, 0, 0, 0.1);
-    border-radius: 20px;
+    border-top: 16px dotted rgba(80, 80, 80, 0.1);
+    border-bottom: 32px dotted rgba(80, 80, 80, 0.1);
     z-index: -30;
     height: 0.7em;
     left:0;
@@ -53,7 +52,11 @@ const id = title.replaceAll(" ", "");
     margin-left: -20ch;
     margin-right: -20ch;
   }
-
+.offset {
+  border-top: 24px dotted hsl(0, 0%, 13%);
+border-bottom: 0;
+  top: 32px;
+}
 
 
 </style>
@@ -61,7 +64,7 @@ const id = title.replaceAll(" ", "");
 <div class="wrapper">
   <a href={url}><h3>{title}</h3></a>
   <div class="decoration"></div>
-
+  <div class="decoration offset"></div>
   <article>
     <slot name="description" /> 
     {desc}
