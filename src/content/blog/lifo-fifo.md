@@ -20,5 +20,3 @@ So, cooker Robin is there, frying patties. Let's say he puts 5 patties in the fr
 ## Are you talking about code?
 
 Yes, a queue is a FIFO data structure. a stack is a LIFO data structure and a Round-robin is a circular queue. But why do we care about it? Once you need you will know why. But for reference, JavaScript timers event run in a queue. And normally in programming we have a call stack, you have seen it I'm sure, when an error happens and you see the call stack; You can a function and it's going to be executed next, if inside this function there's another call, guess what?
-
-

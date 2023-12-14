@@ -13,7 +13,7 @@ Before diving in, I wonder why it is called Monkey Patch, and by it I already as
 
 ## What is it?
 
-I don't know exactly. The definition around is to make a code that behaves differently during runtime. Commonly I've read that monkey patching is not a bad thing per se, but how often and how mindful the patching is done. 
+I don't know exactly. The definition around is to make a code that behaves differently during runtime. Commonly I've read that monkey patching is not a bad thing per se, but how often and how mindful the patching is done.
 
 I feel that comparing it to a car is easier to understand. Let's take a car with those knobs to set the headlights. But then one day you decide to install flood lights to use offrad. But then you decided to put it in the same knob but it works only when the car's engine is running: The knob don't set the headlights, but the flood lights, if you want to turn of the headlights you must turn off the engine, then go at it again.
 
@@ -25,6 +25,6 @@ You have the car at the garage and lend it to a friend without saying much. Then
 
 ## So why do this?
 
-Because you need. Because someone asked. Because is the only way. Because it's easier. Because you don't know better. Everything in code is around those same motifs. 
+Because you need. Because someone asked. Because is the only way. Because it's easier. Because you don't know better. Everything in code is around those same motifs.
 
 Ok, not everything. It's noy the only way, there's tradeoffs but this is a discussion for another post. Thanks for reading!

@@ -11,13 +11,13 @@ const page = Astro.url.pathname;
   <span class="sidenote">
     <nav>
       <ul>
-        <li aria-current={page === "/" ? "page" : undefined }>
+        <li aria-current={page === "/" ? "page" : undefined}>
           <a href="/">Home</a>
         </li>
-        <li aria-current={page.startsWith("/blog") ? "page" : undefined }>
+        <li aria-current={page.startsWith("/blog") ? "page" : undefined}>
           <a href="/blog">Blog</a>
         </li>
-        <li aria-current={page === "/about" ? "page" : undefined }>
+        <li aria-current={page === "/about" ? "page" : undefined}>
           <a href="/about">About</a>
         </li>
       </ul>

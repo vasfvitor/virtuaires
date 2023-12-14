@@ -59,10 +59,9 @@ h2:not(.lead)::after {
 
 @media only screen and (max-width: 600px) {
   :root {
-    --width: 220px;
+    --width: 180px;
   }
 }
-
 
 .circle::after {
   opacity: 0;
@@ -123,8 +122,8 @@ h2:not(.lead)::after {
 }
 
 .reveal-hero {
-    animation: reveal 1618ms cubic-bezier(1, 0, 0.83, 0.67);
-  }
+  animation: reveal 1618ms cubic-bezier(1, 0, 0.83, 0.67);
+}
 
 .projects img {
   border-radius: 4px;
@@ -132,7 +131,7 @@ h2:not(.lead)::after {
 }
 
 .lead {
-user-select: none;
+  user-select: none;
   font-family: monospace;
   letter-spacing: -2px;
   line-height: 0.85em;

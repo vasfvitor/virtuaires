@@ -24,9 +24,9 @@ const id = title.replaceAll(" ", "");
     position: relative;
     margin: 0;
   }
-    
+
   h3::before {
-    top:-15px;
+    top: -15px;
     left: -30px;
     content: "";
     height: 40px;
@@ -38,20 +38,17 @@ const id = title.replaceAll(" ", "");
     background-size: contain;
     z-index: -20;
   }
-
-
-
 </style>
 
 <div class="wrapper">
   <a href={url}><h3>{title}</h3></a>
- 
+
   <article>
-    <slot name="description" /> 
+    <slot name="description" />
     {desc}
     {
       made && (
-      
+        <>
           <label for={id} class="sidenote-toggle">
             <svg
               width="20px"
@@ -74,7 +71,7 @@ const id = title.replaceAll(" ", "");
           </label>
           <input type="checkbox" id={id} class="sidenote-toggle" />
           <span class="sidenote">{made}</span>
-       
+        </>
       )
     }
   </article>

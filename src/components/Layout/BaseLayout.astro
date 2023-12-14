@@ -33,10 +33,7 @@ const { SITE_TITLE, SITE_DESCRIPTION } = Astro.props;
       });
     });
   </script> -->
-  <body
-    class="latex-dark-auto"
-    class:list={[{ "latex-dark": isHomePage }]}
-  >
+  <body class="latex-dark-auto" class:list={[{ "latex-dark": isHomePage }]}>
     <!-- <Header title={SITE_TITLE} /> -->
     <slot />
     <Footer />
