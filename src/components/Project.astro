@@ -13,6 +13,7 @@ const id = title.replaceAll(" ", "");
 <style>
   .wrapper {
     margin-top: 3rem;
+    position: relative;
   }
   a {
     display: block;
@@ -37,18 +38,20 @@ const id = title.replaceAll(" ", "");
     background-size: contain;
     z-index: -20;
   }
-  h3::after {
+  .decoration {
+    /* bottom: 0; */
     content: "";
     position: absolute;
-    width:160vw;
-    bottom: 0;
     border:0;
     border-top: 10px dotted rgba(0, 0, 0, 0.1);
     border-bottom: 12px dotted rgba(0, 0, 0, 0.1);
+    border-radius: 20px;
     z-index: -30;
     height: 0.7em;
-    left:-50vw;
-    pointer-events: none;
+    left:0;
+    right: 0;
+    margin-left: -20ch;
+    margin-right: -20ch;
   }
 
 
@@ -57,6 +60,7 @@ const id = title.replaceAll(" ", "");
 
 <div class="wrapper">
   <a href={url}><h3>{title}</h3></a>
+  <div class="decoration"></div>
 
   <article>
     <slot name="description" /> 
