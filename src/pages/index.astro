@@ -11,6 +11,10 @@ import ea from "/src/assets/projects/ea-demo.jpg";
 import runes1 from "/src/assets/projects/runes.gif";
 import profile from "src/assets/images/pfp.jpg";
 
+// Sane
+import sane2 from "src/assets/projects/sane-web.png";
+import sane3 from "src/assets/projects/sane-pdf.gif";
+
 import Project from "@components/Project.astro";
 
 import Vitor from "/Vitor.svg?raw";
@@ -44,16 +48,29 @@ import "../styles/index.css";
         alt="Vitor Ayres artistic profile - made by a real person"
       />
       <p>
-        I like solving puzzles and challenges, it all started with highschool
-        math, I discovered coding's endless challenges and fell in love when
-        working in a paid media manager position, while working, I was seeking
-        to solve a problem that the solution I need to code, so, while into this
-        I learnt just enough to solve it, but more than enough to enjoy and want
-        more.
+        I like solving puzzles and problems, it all started with highschool
+        math; Then a few years ago I discovered coding's endless challenges and
+        fell in love when at a job I need to solve a problem that the solution
+        needed code; so, while into this, I learnt just enough to solve it, but
+        more than enough to enjoy and want more.
       </p>
     </section>
     <section class="projects">
-      <h2>Projects</h2>
+      <h2>Works</h2>
+      <Project
+        title="SanePWA + Website"
+        desc="Website and PWA to generate invoices. Closed Source."
+        made="website: Astro, Tailwind, Blaze Slider | PWA: Vite, Svelte, jsPDF, FilePond"
+      >
+        <Image src={sane2} alt="Sane website mobile" />
+         PWA works offline, on mobile, and can be installed as an app:
+        <Image src={sane3} alt="Sane PDF invoice generator" />
+         It was initially written in vanilla JavaScript with Workbox package,
+        but recently was refactored to Vite + Svelte. While at it I kept asking
+        myself how the original code was even working with a bunch of wrong
+        function signatures and calls.
+      </Project>
+      <!--  -->
       <Project
         title="Bandeiras do Brasil"
         desc="Showcases flags and coat of arms from each Brazil state. There's a quiz where one can play to try and guess all flags by name."
@@ -61,34 +78,51 @@ import "../styles/index.css";
         made="Astro, Tailwind and Typescript"
       >
         <Image src={bandeiras1} alt="Gif showcasing website map of Brazil" />
-
         <Image
           src={bandeiras3}
           alt="Tocatins (Brazilian State) flag and coat of arms"
         />
+         Done as CS50x final project. Quiz and state management was written
+        entirely in Typescript. Now I know all the flags from Brazil, even
+        though I live there, I couldn't ID more than a few flags.
       </Project>
 
+      <!--  -->
+
+      <!--  -->
       <Project
         title="Custom MT5 Expert Advisor"
         desc="MetaTrader 5 Expert Advisor - EA, made according to client's personal strategy and definitions. Closed Source."
         made="MQL5 (MetaQuotes Language 5), a C++ syntax language with OOP"
       >
         <Image src={ea} alt="Demo from the EA" />
+         This was actully a challenge since I had to learn the basics of day
+        trading to be able to understand and translate the strategy to code. I'm
+        grateful for all the support folks at MQL5 forum provided.
       </Project>
       <Project
         title="Elder Futhark Runes"
         desc="Webapp showing animated cards Runes from Norse Elder Futhark"
         url="https://elder-futhark-runes.pages.dev/"
         made="Vite, Svelte, Flowbite, Typescript and original card designs"
-      />
-      <Image src={runes1} alt="Gif showcasing website map of Brazil" />
+      >
+        <Image src={runes1} alt="Rune card" />
+         This was really fun to do and get to know more about each Rune and it's
+        meaning. It's something, isn't? Had to do a bit of research into the
+        writing and history to use the right text font.
+      </Project>
       <br />
-      <p>See more on <a href="https://github.com/vasfvitor/">GitHub</a></p>
+      <p>
+        See my OSS contributons on <a href="https://github.com/vasfvitor/"
+          >GitHub</a
+        >
+      </p>
     </section>
     <section>
       <h2>Get in touch</h2>
       <a href="mailto:vasfvitor@virtuaires.com.br">Send an email</a> or reach me
-      on <a href="https://www.linkedin.com/in/ayresvitor/">LinkedIn</a>
+      on <a href="https://www.linkedin.com/in/ayresvitor/">LinkedIn</a>. Bonus
+      point if you there's a pun intended.
     </section>
   </main>
 </BaseLayout>
