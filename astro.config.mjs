@@ -6,6 +6,6 @@ import prefetch from "@astrojs/prefetch";
 
 // https://astro.build/config
 export default defineConfig({
-  site: "https://ola.virtuaires.com.br",
+  site: "https://eu.virtuaires.com.br",
   integrations: [mdx(), sitemap(), prefetch()],
 });
