@@ -57,7 +57,7 @@ h2:not(.lead) {
 .pfp {
   float: left;
   border-radius: 50%;
-  width: 100px !important;
+  width: 100px;
   height: 100px;
   margin: 6px 16px 4px 0;
 }
