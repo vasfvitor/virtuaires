@@ -45,8 +45,8 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
   <header class="hero">
     <div style="z-index: 60">
       <h1 class="sr-only">Vitor Ayres</h1>
-      <div class="signature" set:html={signature} />
-      <h2 class="lead">
+      <div class="signature" aria-hidden="true" set:html={signature} />
+      <p class="lead">
         {lead.map((word, i) => (
           <>
             <span style={`--i: ${i}`}>
@@ -62,9 +62,14 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
             </span>{" "}
           </>
         ))}
-      </h2>
+      </p>
     </div>
-    <div class="circle circle-first" title={moonLabel(phase)}>
+    <div
+      class="circle circle-first"
+      role="img"
+      aria-label={`The Moon: ${moonLabel(phase)}`}
+      title={moonLabel(phase)}
+    >
       <svg class="phase" viewBox="-1 -1 2 2" aria-hidden="true">
         <path
           d={litPath(phase)}
@@ -186,6 +191,7 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
     lit.setAttribute("d", litPath(phase));
     lit.setAttribute("transform", litFromLeft(phase) ? "scale(-1 1)" : "");
     moon.title = moonLabel(phase);
+    moon.ariaLabel = `The Moon: ${moon.title}`;
   };
 
   update();

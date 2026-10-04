@@ -238,4 +238,10 @@ h2:not(.lead) {
   color: hsl(215, 30%, 82%);
   text-align: center;
   text-wrap: balance;
+  hyphens: none;
+  /* Keeps the words readable where they cross the lit side of the Moon */
+  text-shadow:
+    0 0 0.12em var(--body-bg-color),
+    0 0 0.3em var(--body-bg-color),
+    0 0 0.6em var(--body-bg-color);
 }
