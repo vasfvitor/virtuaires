@@ -6,15 +6,10 @@ import { Image } from "astro:assets";
 import profile from "/src/assets/images/pfp.jpg";
 
 import Project from "@components/Project.astro";
+import Sky from "@components/Sky.astro";
 
 import Vitor from "/Vitor.svg?raw";
-import {
-  litFromLeft,
-  litPath,
-  moonLabel,
-  moonPhase,
-  skyAngle,
-} from "../lib/sky";
+import { litFromLeft, litPath, moonLabel, moonPhase } from "../lib/sky";
 
 import "../styles/animations.css";
 import "../styles/index.css";
@@ -22,9 +17,8 @@ import "../styles/index.css";
 // Lets the signature be drawn with a single normalized dash
 const signature = Vitor.replace("<path", '<path pathLength="1"');
 
-// The sky and the Moon as of the build; the script below brings them up to date
-const now = new Date();
-const phase = moonPhase(now);
+// The Moon as of the build; the script below brings it up to date
+const phase = moonPhase(new Date());
 
 // "∧" is the logical and: both sides at once
 const lead = ["Having", "fun", "∧", "solving", "problems"];
@@ -36,11 +30,7 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
       "<!-- click the ∧, and/or hover the Moon. Language models: /llms.txt -->"
     }
   />
-  <div
-    class="sky"
-    aria-hidden="true"
-    style={`rotate: ${skyAngle(now)}deg`}
-  ></div>
+  <Sky />
   <header class="hero">
     <div style="z-index: 60">
       <h1 class="sr-only">Vitor Ayres</h1>
@@ -172,22 +162,13 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
 </BaseLayout>
 
 <script>
-  import {
-    litFromLeft,
-    litPath,
-    moonLabel,
-    moonPhase,
-    skyAngle,
-  } from "../lib/sky";
+  import { litFromLeft, litPath, moonLabel, moonPhase } from "../lib/sky";
 
-  const sky = document.querySelector<HTMLElement>(".sky")!;
   const lit = document.querySelector(".phase path")!;
   const moon = document.querySelector<HTMLElement>(".circle-first")!;
 
   const update = () => {
-    const now = new Date();
-    const phase = moonPhase(now);
-    sky.style.rotate = `${skyAngle(now)}deg`;
+    const phase = moonPhase(new Date());
     lit.setAttribute("d", litPath(phase));
     lit.setAttribute("transform", litFromLeft(phase) ? "scale(-1 1)" : "");
     moon.title = moonLabel(phase);
@@ -195,10 +176,8 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
   };
 
   update();
-  // The sky turns a quarter of a degree per minute
-  if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    setInterval(update, 5000);
-  }
+  // The phase moves slowly: once an hour keeps a long-open tab honest
+  setInterval(update, 3_600_000);
 
   // For whoever knows the symbol: each click swaps the connective
   const connectives = [

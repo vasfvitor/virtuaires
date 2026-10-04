@@ -1,0 +1,25 @@
+---
+import { skyAngle } from "../lib/sky";
+---
+
+<!-- The real sky, as of the build; the script below brings it up to date -->
+<div
+  class="sky"
+  aria-hidden="true"
+  style={`rotate: ${skyAngle(new Date())}deg`}
+></div>
+
+<script>
+  import { skyAngle } from "../lib/sky";
+
+  const sky = document.querySelector<HTMLElement>(".sky")!;
+  const turn = () => {
+    sky.style.rotate = `${skyAngle(new Date())}deg`;
+  };
+
+  turn();
+  // The sky turns a quarter of a degree per minute
+  if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    setInterval(turn, 5000);
+  }
+</script>

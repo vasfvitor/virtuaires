@@ -1,0 +1,40 @@
+---
+import BaseLayout from "@components/Layout/BaseLayout.astro";
+import Sky from "@components/Sky.astro";
+
+import "../styles/animations.css";
+import "../styles/index.css";
+---
+
+<BaseLayout
+  SITE_TITLE="Page not found"
+  SITE_DESCRIPTION="This page does not exist."
+  dark
+>
+  <Sky />
+  <main class="reveal">
+    <h1>404</h1>
+    <p>This star isn't in the catalogue.</p>
+    <p>
+      <a href="/">Go to the home page</a>
+    </p>
+  </main>
+</BaseLayout>
+
+<style>
+  main {
+    margin-top: 22vh;
+    padding-block: 2rem;
+    text-align: center;
+  }
+
+  h1 {
+    font-size: 4rem;
+    line-height: 1;
+    color: hsl(215, 40%, 96%);
+  }
+
+  p {
+    text-align: center;
+  }
+</style>

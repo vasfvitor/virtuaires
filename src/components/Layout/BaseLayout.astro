@@ -2,8 +2,12 @@
 import BaseHead from "@components/Layout/BaseHead.astro";
 import Footer from "@components/Layout/Footer.astro";
 
-const isHomePage = Astro.url.pathname === "/";
-const { SITE_TITLE, SITE_DESCRIPTION } = Astro.props;
+// The night theme is the home page's; other pages opt in with `dark`
+const {
+  SITE_TITLE,
+  SITE_DESCRIPTION,
+  dark = Astro.url.pathname === "/",
+} = Astro.props;
 ---
 
 <!doctype html>
@@ -11,7 +15,7 @@ const { SITE_TITLE, SITE_DESCRIPTION } = Astro.props;
   <head>
     <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
   </head>
-  <body class="latex-dark-auto" class:list={[{ "latex-dark": isHomePage }]}>
+  <body class="latex-dark-auto" class:list={[{ "latex-dark": dark }]}>
     <slot />
     <Footer />
   </body>
