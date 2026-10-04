@@ -220,15 +220,6 @@ h2:not(.lead) {
   }
 }
 
-.colophon {
-  margin-top: 5rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--footnotes-border-color);
-  font-size: 0.8rem;
-  color: var(--footnotes-border-color);
-  text-align: left;
-}
-
 .lead {
   user-select: none;
   font-style: italic;
@@ -266,7 +257,6 @@ h2:not(.lead) {
   .sky,
   .circle,
   footer,
-  .colophon,
   .operator ~ *,
   h3::before {
     display: none !important;
