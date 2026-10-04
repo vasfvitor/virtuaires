@@ -235,12 +235,14 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
     update();
   } else {
     draw(0);
-    const [delay, duration] = [300, 1900];
+    // A young Moon has little to show, an old one runs almost the full cycle
+    const [delay, duration] = [150, 700 + 1500 * today];
     const start = performance.now() + delay;
+    const ease = (t: number) =>
+      t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2;
     const step = (now: number) => {
       const t = Math.min(1, Math.max(0, (now - start) / duration));
-      // Eases out, so the last days of the cycle arrive slowly
-      draw(today * (1 - (1 - t) ** 3));
+      draw(today * ease(t));
       if (t < 1) requestAnimationFrame(step);
       else update();
     };

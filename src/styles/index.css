@@ -86,8 +86,8 @@ h2:not(.lead) {
   stroke: black;
   stroke-dasharray: 1;
   animation:
-    sign-draw 1800ms cubic-bezier(0.6, 0, 0.3, 1) 300ms both,
-    sign-fill 700ms ease-out 1700ms both;
+    sign-draw 1600ms cubic-bezier(0.6, 0, 0.3, 1) 1100ms both,
+    sign-fill 700ms ease-out 2300ms both;
 }
 
 /* The Moon: dark side barely there, the lit side drawn on top */
@@ -144,7 +144,7 @@ h2:not(.lead) {
 
 .lead > span {
   display: inline-block;
-  animation: word-in 500ms ease-out calc(1900ms + var(--i) * 90ms) both;
+  animation: word-in 500ms ease-out calc(2700ms + var(--i) * 90ms) both;
 }
 
 .reveal {
