@@ -155,17 +155,17 @@ const lead = [
       <a href="mailto:vasfvitor@virtuaires.com.br">Send an email</a> or reach me
       on <a href="https://www.linkedin.com/in/ayresvitor/">LinkedIn</a>.
     </section>
-    <p class="colophon">
-      The sky behind this page is drawn from real data: the{" "}
-      {stars.length.toLocaleString("en")} stars visible to the naked eye south
-      of +40° declination, each placed by its coordinates, sized by its
-      brightness and tinted by its temperature. The faint glow is the Milky Way.
-      The view is centred on the south celestial pole and turned to match the
-      sky right now on Brasília time, and the disc behind my name shows today's
-      phase of the Moon as seen from the southern hemisphere. Data from the
-      Hipparcos catalogue, via{" "}
-      <a href="https://github.com/ofrohn/d3-celestial">d3-celestial</a>.
-    </p>
+    <div class="colophon">
+      <p>
+        The background is the southern sky right now, on Brasília time:{" "}
+        {stars.length.toLocaleString("en")} real stars and the Milky Way around
+        the south celestial pole. The disc is today's Moon phase.
+      </p>
+      <p>
+        Data: Hipparcos catalogue, via{" "}
+        <a href="https://github.com/ofrohn/d3-celestial">d3-celestial</a>.
+      </p>
+    </div>
   </main>
 </BaseLayout>
 

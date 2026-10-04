@@ -206,6 +206,11 @@ h2:not(.lead) {
   color: var(--footnotes-border-color);
 }
 
+.colophon p {
+  margin-top: 0.25rem;
+  text-align: left;
+}
+
 .projects img {
   border-radius: 4px;
   margin-top: 12px;
