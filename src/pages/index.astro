@@ -22,10 +22,8 @@ const signature = Vitor.replace("<path", '<path pathLength="1"');
 const now = new Date();
 const phase = moonPhase(now);
 
-const lead = [
-  ["Making", "software"],
-  ["easier", "to", "understand"],
-];
+// "∧" is the logical and: both sides at once
+const lead = ["Having", "fun", "∧", "solving", "problems"];
 ---
 
 <BaseLayout {SITE_TITLE} {SITE_DESCRIPTION}>
@@ -39,14 +37,20 @@ const lead = [
       <h1 class="sr-only">Vitor Ayres</h1>
       <div class="signature" set:html={signature} />
       <h2 class="lead">
-        {lead.map((line, l) => (
+        {lead.map((word, i) => (
           <>
-            {line.map((word, w) => (
-              <>
-                <span style={`--i: ${l * 2 + w}`}>{word}</span>{" "}
-              </>
-            ))}
-            {l === 0 && <br />}
+            <span style={`--i: ${i}`}>
+              {word === "∧" ? (
+                <>
+                  <span class="operator" aria-hidden="true">
+                    ∧
+                  </span>
+                  <span class="sr-only">and</span>
+                </>
+              ) : (
+                word
+              )}
+            </span>{" "}
           </>
         ))}
       </h2>

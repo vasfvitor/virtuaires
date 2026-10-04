@@ -3,4 +3,4 @@
 
 export const SITE_TITLE = "Vitor Ayres";
 export const SITE_DESCRIPTION =
-  "Vitor Ayres makes software easier to understand. Open source work on the Tauri documentation and other projects.";
+  "Vitor Ayres: having fun and solving problems. Open source work on the Tauri documentation and other projects.";

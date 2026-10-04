@@ -172,7 +172,15 @@ h2:not(.lead) {
   animation-delay: 500ms;
 }
 
-.lead span {
+/* Operators are set upright, as in maths */
+.lead .operator {
+  font-style: normal;
+  font-size: 1.2em;
+  line-height: 0;
+  margin-inline: 0.1em;
+}
+
+.lead > span {
   display: inline-block;
   animation: word-in 500ms ease-out calc(1900ms + var(--i) * 90ms) both;
 }
@@ -225,4 +233,5 @@ h2:not(.lead) {
   margin: 0.4rem 0 0;
   color: hsl(215, 30%, 82%);
   text-align: center;
+  text-wrap: balance;
 }
