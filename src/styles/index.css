@@ -90,8 +90,7 @@ h2:not(.lead) {
     --width: 180px;
   }
 
-  main p,
-  main .body {
+  main p {
     text-align: left;
   }
 }

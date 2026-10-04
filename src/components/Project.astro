@@ -29,18 +29,17 @@ const { title, url, desc, made } = Astro.props;
     line-height: 1.4;
   }
 
+  /* A small four-pointed star in the margin */
   h3::before {
-    top: -15px;
-    left: -30px;
     content: "";
-    height: 40px;
-    width: 40px;
     position: absolute;
-    background-image: url("/bg.svg");
-    background-position: top;
-    background-repeat: no-repeat;
-    background-size: contain;
-    z-index: -20;
+    left: -1.15rem;
+    top: 50%;
+    translate: 0 -50%;
+    width: 0.75rem;
+    height: 0.75rem;
+    background: var(--accent, currentColor);
+    mask: url("/star.svg") center / contain no-repeat;
   }
 
   h3 a {
@@ -64,9 +63,9 @@ const { title, url, desc, made } = Astro.props;
     hyphens: auto;
   }
 
-  @media only screen and (max-width: 720px) {
-    h3::before {
-      left: -18px;
+  @media only screen and (max-width: 600px) {
+    .body {
+      text-align: left;
     }
   }
 </style>
