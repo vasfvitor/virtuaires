@@ -1,5 +1,12 @@
 ---
-import { SITE_TITLE, SITE_DESCRIPTION } from "~/consts";
+import {
+  EMAIL,
+  GITHUB_URL,
+  LINKEDIN_URL,
+  ROLE,
+  SITE_DESCRIPTION,
+  SITE_TITLE,
+} from "~/consts";
 import BaseLayout from "@components/Layout/BaseLayout.astro";
 import { Image, getImage } from "astro:assets";
 
@@ -8,14 +15,11 @@ import profile from "/src/assets/images/pfp.jpg";
 import Project from "@components/Project.astro";
 import Sky from "@components/Sky.astro";
 
-import Vitor from "/Vitor.svg?raw";
-import { litFromLeft, litPath, moonLabel, moonPhase } from "../lib/sky";
+import signature from "../assets/Vitor.svg?raw";
+import { litPath, moonLabel, moonPhase } from "../lib/sky";
 
 import "../styles/animations.css";
 import "../styles/index.css";
-
-// Lets the signature be drawn with a single normalized dash
-const signature = Vitor.replace("<path", '<path pathLength="1"');
 
 // The Moon as of the build; the script below brings it up to date
 const phase = moonPhase(new Date());
@@ -33,13 +37,13 @@ const schema = {
   mainEntity: {
     "@type": "Person",
     "@id": `${site.href}#me`,
-    name: "Vitor Ayres",
+    name: SITE_TITLE,
     alternateName: ["Ayres Vitor", "vasfvitor"],
     url: site.href,
     image: new URL(portrait.src, site).href,
     description: SITE_DESCRIPTION,
     jobTitle: "Software engineer",
-    email: "mailto:vasfvitor@virtuaires.com.br",
+    email: `mailto:${EMAIL}`,
     memberOf: {
       "@type": "Organization",
       name: "Tauri Working Group",
@@ -56,10 +60,7 @@ const schema = {
       "Python",
       "Rust",
     ],
-    sameAs: [
-      "https://github.com/vasfvitor",
-      "https://www.linkedin.com/in/ayresvitor/",
-    ],
+    sameAs: [GITHUB_URL, LINKEDIN_URL],
   },
 };
 
@@ -68,9 +69,10 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
 ---
 
 <BaseLayout
-  SITE_TITLE={`${SITE_TITLE}, software engineer and open source developer`}
-  {SITE_DESCRIPTION}
+  title={`${SITE_TITLE}, ${ROLE}`}
+  description={SITE_DESCRIPTION}
   type="profile"
+  fonts={["STIXTwoText-regular", "STIXTwoText-italic", "STIXTwoMath-symbols"]}
 >
   <script
     is:inline
@@ -85,19 +87,17 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
   />
   <Sky />
   <header class="hero">
-    <div style="z-index: 60">
-      <h1 class="sr-only">Vitor Ayres</h1>
+    <div class="hero-text">
+      <h1 class="sr-only">{SITE_TITLE}</h1>
       <div class="signature" aria-hidden="true" set:html={signature} />
       <p class="lead">
         {lead.map((word, i) => (
           <>
             <span style={`--i: ${i}`}>
               {word === "∧" ? (
-                <>
-                  <button class="operator" type="button" aria-label="and">
-                    ∧
-                  </button>
-                </>
+                <button class="operator" type="button" aria-label="and">
+                  ∧
+                </button>
               ) : (
                 word
               )}
@@ -113,14 +113,11 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
       title={moonLabel(phase)}
     >
       <svg class="phase" viewBox="-1 -1 2 2" aria-hidden="true">
-        <path
-          d={litPath(phase)}
-          transform={litFromLeft(phase) ? "scale(-1 1)" : undefined}
-        ></path>
+        <path d={litPath(phase)}></path>
       </svg>
     </div>
   </header>
-  <main class="reveal">
+  <main>
     <section class="about-me">
       <h2 class="sr-only">About me</h2>
       <p>
@@ -187,18 +184,14 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
       />
       <br />
       <p>
-        More on <a href="https://github.com/vasfvitor/">GitHub</a>.
+        More on <a href={GITHUB_URL}>GitHub</a>.
       </p>
     </section>
     <section>
       <h2>Get in touch</h2>
-      Email me at{" "}
-      <a href="mailto:vasfvitor@virtuaires.com.br">
-        vasfvitor@virtuaires.com.br
-      </a>{" "}
-      or reach me on{" "}
-      <a href="https://www.linkedin.com/in/ayresvitor/">LinkedIn</a>. Also, I
-      want a Concept2. Would you buy it for me?
+      Email me at <a href={`mailto:${EMAIL}`}>{EMAIL}</a> or reach me on{" "}
+      <a href={LINKEDIN_URL}>LinkedIn</a>. Also, I want a Concept2. Would you
+      buy it for me?
       <Image
         class="pfp"
         src={profile}
@@ -212,15 +205,12 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
 </BaseLayout>
 
 <script>
-  import { litFromLeft, litPath, moonLabel, moonPhase } from "../lib/sky";
+  import { litPath, moonLabel, moonPhase } from "../lib/sky";
 
   const lit = document.querySelector(".phase path")!;
   const moon = document.querySelector<HTMLElement>(".moon")!;
 
-  const draw = (phase: number) => {
-    lit.setAttribute("d", litPath(phase));
-    lit.setAttribute("transform", litFromLeft(phase) ? "scale(-1 1)" : "");
-  };
+  const draw = (phase: number) => lit.setAttribute("d", litPath(phase));
 
   const update = () => {
     const phase = moonPhase(new Date());
@@ -236,8 +226,8 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
   } else {
     draw(0);
     // A young Moon has little to show, an old one runs almost the full cycle
-    const [delay, duration] = [150, 700 + 1500 * today];
-    const start = performance.now() + delay;
+    const duration = 700 + 1500 * today;
+    const start = performance.now() + 150;
     const ease = (t: number) =>
       t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2;
     const step = (now: number) => {

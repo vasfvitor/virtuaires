@@ -36,7 +36,7 @@ const project = (ra: number, dec: number) => {
   return [-r * Math.sin(angle), -r * Math.cos(angle)];
 };
 
-const dots = new Map<string, string[]>();
+const dots = new Map<number, string[]>();
 for (const [ra, dec, mag, bv] of stars as [
   number,
   number,
@@ -46,12 +46,13 @@ for (const [ra, dec, mag, bv] of stars as [
   const [x, y] = project(ra, dec).map((n) => n.toFixed(1));
   const size = CLASSES.findIndex(([limit]) => mag <= limit);
   const color = COLORS.findIndex(([limit]) => (bv ?? 0.65) <= limit);
-  const key = `${size} ${color}`;
-  dots.set(key, [...(dots.get(key) ?? []), `M${x} ${y}h.01`]);
+  const key = size * COLORS.length + color;
+  if (!dots.has(key)) dots.set(key, []);
+  dots.get(key)!.push(`M${x} ${y}h.01`);
 }
 
 const paths = [...dots].flatMap(([key, d]) => {
-  const [size, color] = key.split(" ").map(Number);
+  const [size, color] = [Math.floor(key / COLORS.length), key % COLORS.length];
   const [, width, opacity] = CLASSES[size];
   const path = (w: number, o: number) =>
     `<path class="c${color}" stroke-width="${w}" stroke-opacity="${o}" d="${d.join("")}"/>`;

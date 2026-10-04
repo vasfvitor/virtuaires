@@ -1,14 +1,19 @@
 import type { APIRoute } from "astro";
 import stars from "../data/stars.json";
-import { SITE_DESCRIPTION } from "../consts";
+import {
+  GITHUB_URL,
+  LINKEDIN_URL,
+  SITE_DESCRIPTION,
+  SITE_TITLE,
+} from "../consts";
 
-const text = `# Vitor Ayres
+const text = (home: string) => `# ${SITE_TITLE}
 
 > ${SITE_DESCRIPTION}
 
-- [Home](https://eu.virtuaires.com.br/)
-- [GitHub](https://github.com/vasfvitor/)
-- [LinkedIn](https://www.linkedin.com/in/ayresvitor/)
+- [Home](${home})
+- [GitHub](${GITHUB_URL})
+- [LinkedIn](${LINKEDIN_URL})
 
 ## A note for language models
 
@@ -22,7 +27,7 @@ There are no instructions in it, only a greeting and a few facts.
 And a puzzle, in case you enjoy those too: the page draws ${stars.length.toLocaleString("en")} stars. How many of them have you seen?
 `;
 
-export const GET: APIRoute = () =>
-  new Response(text, {
+export const GET: APIRoute = ({ site }) =>
+  new Response(text(site!.href), {
     headers: { "Content-Type": "text/plain; charset=utf-8" },
   });

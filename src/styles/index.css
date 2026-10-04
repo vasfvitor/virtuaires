@@ -1,24 +1,4 @@
-/* Visited links shift towards violet, so they can be told apart */
-main a:visited {
-  color: hsl(255, 85%, 82%);
-}
-
-h2:not(.lead),
-h3 {
-  color: var(--heading);
-}
-
-main {
-  line-height: 1.65;
-  /* Dims the sky behind the text */
-  background: hsla(222, 45%, 8%, 0.8);
-  box-shadow: 0 0 5rem 4rem hsla(222, 45%, 8%, 0.8);
-  /* Keeps the star markers above that backdrop */
-  position: relative;
-  z-index: 0;
-}
-
-h2:not(.lead) {
+h2 {
   margin-top: 4rem;
   margin-bottom: 1rem;
   font-size: 1.6rem;
@@ -43,37 +23,12 @@ h2:not(.lead) {
   filter: grayscale(1) sepia(0.5) hue-rotate(175deg) saturate(1.6);
 }
 
-/* Real star positions, see src/pages/sky.svg.ts */
-.sky {
-  position: fixed;
-  z-index: -30;
-  left: 50%;
-  top: 50%;
-  width: 150vmax;
-  height: 150vmax;
-  translate: -50% -50%;
-  background: url("/sky.svg") center / 100% 100% no-repeat;
-  pointer-events: none;
-  animation: reveal 1618ms ease-out both;
-}
-
 .hero {
-  color: white;
   padding-block: 100px 70px;
   z-index: 30;
   display: grid;
   place-content: center;
   position: relative;
-}
-
-:root {
-  --width: 320px;
-}
-
-@media only screen and (max-width: 600px) {
-  :root {
-    --width: 180px;
-  }
 }
 
 .signature {
@@ -91,18 +46,29 @@ h2:not(.lead) {
 }
 
 /* The Moon: dark side barely there, the lit side drawn on top */
+.hero-text {
+  z-index: 60;
+}
+
 .moon {
+  --moon-size: 320px;
   z-index: 40;
   position: absolute;
   top: 20px;
   left: 20px;
-  width: var(--width);
-  height: var(--width);
+  width: var(--moon-size);
+  height: var(--moon-size);
   border-radius: 50%;
   background: hsla(var(--moon), 0.04);
   animation:
     reveal 900ms ease-out both,
     sway 32s ease-in-out 1200ms infinite;
+}
+
+@media only screen and (max-width: 600px) {
+  .moon {
+    --moon-size: 180px;
+  }
 }
 
 .moon::after {
@@ -117,7 +83,7 @@ h2:not(.lead) {
     7px 0px 23px hsla(var(--moon), 0.26),
     2px 0px 3px rgba(255, 255, 255, 0.307);
   animation:
-    glow-ring 1618ms ease-in-out 1018ms both,
+    reveal 1618ms ease-in-out 1018ms both,
     glow-pulse 8s ease-in-out 2636ms infinite alternate;
 }
 
@@ -130,7 +96,6 @@ h2:not(.lead) {
 /* Operators are set upright, as in maths */
 .lead .operator {
   font-style: normal;
-  font-size: 1em;
   line-height: 0;
   margin-inline: 0.1em;
   /* It is a button, but it should not look like one */
@@ -138,17 +103,12 @@ h2:not(.lead) {
   border: 0;
   background: none;
   color: inherit;
-  font-family: inherit;
   cursor: inherit;
 }
 
 .lead > span {
   display: inline-block;
   animation: word-in 500ms ease-out calc(2700ms + var(--i) * 90ms) both;
-}
-
-.reveal {
-  animation: reveal 250ms ease-in;
 }
 
 /* No movement, only fades */
@@ -160,7 +120,7 @@ h2:not(.lead) {
     animation: reveal 800ms ease-out both;
   }
   .moon::after {
-    animation: glow-ring 1618ms ease-in-out 400ms both;
+    animation: reveal 1618ms ease-in-out 400ms both;
   }
   .lead span {
     animation: reveal 500ms ease-out 400ms both;
@@ -170,7 +130,6 @@ h2:not(.lead) {
 .lead {
   user-select: none;
   font-style: italic;
-  font-weight: normal;
   font-size: 1.45rem;
   line-height: 1.15;
   margin: 0.4rem 0 0;
@@ -205,12 +164,8 @@ h2:not(.lead) {
     font-size: 11pt;
   }
 
-  .sky,
-  .moon,
-  footer,
-  .operator ~ *,
-  h3::before {
-    display: none !important;
+  .moon {
+    display: none;
   }
 
   .hero {
@@ -232,9 +187,8 @@ h2:not(.lead) {
     box-shadow: none;
   }
 
-  h2:not(.lead) {
+  h2 {
     margin-top: 2rem;
-    clear: both;
   }
 
   main a:visited {
@@ -246,16 +200,12 @@ h2:not(.lead) {
     content: " (" attr(href) ")";
     font-size: 0.8em;
     font-weight: normal;
-    color: #555;
+    color: var(--muted);
     word-break: break-all;
   }
 
   .hero *,
-  .reveal {
+  main {
     animation: none !important;
-  }
-
-  .projects > div {
-    break-inside: avoid;
   }
 }

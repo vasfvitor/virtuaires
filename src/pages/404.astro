@@ -1,18 +1,15 @@
 ---
 import BaseLayout from "@components/Layout/BaseLayout.astro";
 import Sky from "@components/Sky.astro";
-
-import "../styles/animations.css";
-import "../styles/index.css";
 ---
 
 <BaseLayout
-  SITE_TITLE="Page not found"
-  SITE_DESCRIPTION="This page does not exist."
+  title="Page not found"
+  description="This page does not exist."
   noindex
 >
   <Sky />
-  <main class="reveal">
+  <main>
     <h1>404</h1>
     <p>This star isn't in the catalogue.</p>
     <p>
@@ -31,10 +28,5 @@ import "../styles/index.css";
   h1 {
     font-size: 4rem;
     line-height: 1;
-    color: var(--heading);
-  }
-
-  p {
-    text-align: center;
   }
 </style>

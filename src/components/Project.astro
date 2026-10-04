@@ -64,6 +64,16 @@ const { title, url, desc, made } = Astro.props;
     margin-top: 0.5rem;
     text-wrap: pretty;
   }
+
+  @media print {
+    .wrapper {
+      break-inside: avoid;
+    }
+
+    h3::before {
+      display: none;
+    }
+  }
 </style>
 
 <div class="wrapper">

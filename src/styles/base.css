@@ -77,15 +77,36 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* Dims the sky behind the text */
 main {
-  margin: auto;
+  --backdrop: color-mix(in srgb, var(--ground) 80%, transparent);
+  line-height: 1.65;
+  background: var(--backdrop);
+  box-shadow: 0 0 5rem 4rem var(--backdrop);
+  /* Keeps what sits behind the text above that backdrop */
+  position: relative;
+  z-index: 0;
+  animation: reveal 250ms ease-in;
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+h1,
+p {
+  margin: 0;
 }
 
 h1,
 h2,
-h3,
-p {
-  margin: 0;
+h3 {
+  color: var(--heading);
 }
 
 h1 {
@@ -93,20 +114,6 @@ h1 {
   line-height: 3.25rem;
   margin-bottom: 1.625rem;
   text-align: center;
-}
-
-h2 {
-  font-size: 1.7rem;
-  line-height: 2rem;
-  margin-top: 3rem;
-  margin-bottom: 0.8rem;
-}
-
-h3 {
-  font-size: 1.4rem;
-  line-height: 1.625rem;
-  margin-top: 2.5rem;
-  margin-bottom: 0.8rem;
 }
 
 p {
@@ -118,6 +125,11 @@ p {
 a {
   color: var(--accent);
   text-decoration-skip-ink: auto;
+}
+
+/* Visited links shift towards violet, so they can be told apart */
+main a:visited {
+  color: hsl(255, 85%, 82%);
 }
 
 a:focus {

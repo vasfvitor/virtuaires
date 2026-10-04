@@ -9,6 +9,30 @@ import { skyAngle } from "../lib/sky";
   style={`rotate: ${skyAngle(new Date())}deg`}
 ></div>
 
+<style>
+  /* Real star positions, see src/pages/sky.svg.ts */
+  .sky {
+    position: fixed;
+    z-index: -30;
+    left: 50%;
+    top: 50%;
+    width: 150vmax;
+    height: 150vmax;
+    translate: -50% -50%;
+    background: url("/sky.svg") center / 100% 100% no-repeat;
+    pointer-events: none;
+    /* The script turns it every few seconds: keep that off the main thread */
+    will-change: rotate;
+    animation: reveal 1618ms ease-out both;
+  }
+
+  @media print {
+    .sky {
+      display: none;
+    }
+  }
+</style>
+
 <script>
   import { skyAngle } from "../lib/sky";
 
