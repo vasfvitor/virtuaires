@@ -1,27 +1,35 @@
 /* Base styles shared by every page */
 
 @font-face {
-  font-family: "Libertinus";
+  font-family: "STIX Two Text";
   font-style: normal;
   font-weight: normal;
   font-display: block;
-  src: url("/fonts/Libertinus-regular.woff2") format("woff2");
+  src: url("/fonts/STIXTwoText-regular.woff2") format("woff2");
 }
 
 @font-face {
-  font-family: "Libertinus";
+  font-family: "STIX Two Text";
   font-style: italic;
   font-weight: normal;
   font-display: block;
-  src: url("/fonts/Libertinus-italic.woff2") format("woff2");
+  src: url("/fonts/STIXTwoText-italic.woff2") format("woff2");
 }
 
 @font-face {
-  font-family: "Libertinus";
+  font-family: "STIX Two Text";
   font-style: normal;
   font-weight: bold;
   font-display: block;
-  src: url("/fonts/Libertinus-bold.woff2") format("woff2");
+  src: url("/fonts/STIXTwoText-bold.woff2") format("woff2");
+}
+
+/* Only the logical connectives the tagline cycles through */
+@font-face {
+  font-family: "STIX Two Math";
+  font-display: block;
+  src: url("/fonts/STIXTwoMath-symbols.woff2") format("woff2");
+  unicode-range: U+21D2, U+21D4, U+2227-2228, U+2295;
 }
 
 *,
@@ -55,7 +63,9 @@ html {
 }
 
 body {
-  font-family: "Libertinus", Georgia, Cambria, "Times New Roman", Times, serif;
+  font-family:
+    "STIX Two Text", "STIX Two Math", Georgia, Cambria, "Times New Roman",
+    Times, serif;
   line-height: 1.8;
   max-width: 80ch;
   min-height: 100vh;
