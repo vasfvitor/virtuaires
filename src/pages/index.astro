@@ -2,18 +2,9 @@
 import { SITE_TITLE, SITE_DESCRIPTION } from "~/consts";
 import BaseLayout from "@components/Layout/BaseLayout.astro";
 import Image from "@components/Image.astro";
-//import { Image } from "astro:assets";
 
-import bandeiras1 from "/src/assets/projects/bandeiras1.gif";
-//import bandeiras2 from "/src/assets/projects/bandeiras2.gif";
-import bandeiras3 from "/src/assets/projects/bandeiras3.jpg";
 import ea from "/src/assets/projects/ea-demo.jpg";
-import runes1 from "/src/assets/projects/runes.gif";
 import profile from "/src/assets/images/pfp.jpg";
-
-// Sane
-import sane2 from "/src/assets/projects/sane-web.png";
-import sane3 from "/src/assets/projects/sane-pdf.gif";
 
 import Project from "@components/Project.astro";
 
@@ -21,16 +12,32 @@ import Vitor from "/Vitor.svg?raw";
 
 import "../styles/animations.css";
 import "../styles/index.css";
+
+// Lets the signature be drawn with a single normalized dash
+const signature = Vitor.replace("<path", '<path pathLength="1"');
+
+const lead = [
+  ["Write,", "improve,", "fix"],
+  ["&", "document", "code"],
+];
 ---
 
 <BaseLayout {SITE_TITLE} {SITE_DESCRIPTION}>
-  <header class="hero reveal-hero">
+  <header class="hero">
     <div style="z-index: 60">
       <h1 class="sr-only">Vitor Ayres</h1>
-      <!-- <img class="svg" src="/vitor.svg" /> -->
-      <Fragment class="test" set:html={Vitor} />
+      <div class="signature" set:html={signature} />
       <h2 class="lead">
-        Write, improve, fix<br />& document code
+        {lead.map((line, l) => (
+          <>
+            {line.map((word, w) => (
+              <>
+                <span style={`--i: ${l * 3 + w}`}>{word}</span>{" "}
+              </>
+            ))}
+            {l === 0 && <br />}
+          </>
+        ))}
       </h2>
     </div>
     <div class="circle circle-first">
@@ -48,81 +55,89 @@ import "../styles/index.css";
         alt="Vitor Ayres artistic profile - made by a real person"
       />
       <p>
-        I like solving puzzles and problems, it all started with highschool
-        math; Then a few years ago I discovered coding's endless challenges and
-        fell in love when at a job I need to solve a problem that the solution
-        needed code; so, while into this, I learnt just enough to solve it, but
-        more than enough to enjoy and want more.
+        I'm a developer from Brazil who likes solving puzzles and problems. It
+        started with high school math and turned into code when a job needed a
+        solution I had to program myself. These days most of my open source time
+        goes into documentation: getting it correct, easy to find and easy to
+        keep up to date.
       </p>
     </section>
     <section class="projects">
-      <h2>Works</h2>
+      <h2>Open source</h2>
       <Project
-        title="SanePWA + Website"
-        desc="Website and PWA to generate invoices. Closed Source."
-        made="website: Astro, Tailwind, Blaze Slider | PWA: Vite, Svelte, jsPDF, FilePond"
+        title="Tauri documentation"
+        desc="The docs behind tauri.app. Contributing since 2023, with 100+ merged pull requests and 240+ reviewed."
+        url="https://github.com/tauri-apps/tauri-docs"
+        made="Astro, Starlight and TypeScript"
       >
-        <Image src={sane2} alt="Sane website mobile" />
-         PWA works offline, on mobile, and can be installed as an app:
-        <Image src={sane3} alt="GIF: Sane PDF invoice generator" />
-         It was initially written in JavaScript with Workbox package, but
-        recently was refactored to Vite + Svelte. During the refactoring, I
-        often wondered how the original code functioned despite having numerous
-        incorrect function signatures and calls.
+        Besides writing and fixing guides, I look after the site itself: the
+        releases pages with inline changelogs, the translation workflow, link
+        checking and dependency upkeep.
       </Project>
-      <!--  -->
       <Project
-        title="Bandeiras do Brasil"
-        desc="Showcases flags and coat of arms from each Brazil state. There's a quiz where one can play to try and guess all flags by name."
-        url="https://bandeiras.pages.dev/"
-        made="Astro, Tailwind and Typescript"
+        title="Tauri"
+        desc="Fixes and docs tooling in the core repository and the plugins workspace."
+        url="https://github.com/tauri-apps/tauri"
+        made="Rust"
       >
-        <Image src={bandeiras1} alt="GIF: Showcasing website map of Brazil" />
-        <Image
-          src={bandeiras3}
-          alt="Tocatins (Brazilian State) flag and coat of arms"
-        />
-         Done as CS50x final project. Quiz and state management was written
-        entirely in Typescript. Now I know all the flags from Brazil, even
-        though I live there, I couldn't ID more than a few flags.
+        Among them, generating the Markdown permission tables used in the plugin
+        reference.
       </Project>
-
-      <!--  -->
-
-      <!--  -->
+      <Project
+        title="Starlight"
+        desc="Brazilian Portuguese translation of the Starlight documentation."
+        url="https://github.com/withastro/starlight"
+        made="Astro and MDX"
+      />
+      <Project
+        title="astro-embed"
+        desc="Contributed the Link Preview and GitHub Gist embeds."
+        url="https://github.com/delucis/astro-embed"
+        made="Astro and TypeScript"
+      />
+    </section>
+    <section class="projects">
+      <h2>Projects</h2>
+      <Project
+        title="nanci"
+        desc="Desktop manager for Brazilian electronic invoices on Windows. It handles NFS-e through the official API with an A1 certificate, reads NF-e and CT-e, and keeps everything local."
+        url="https://vasfvitor.github.io/nanci/"
+        made="Go"
+      />
+      <Project
+        title="buladiff"
+        desc="Shows what changed between versions of the drug leaflets published in ANVISA's Bulário Eletrônico."
+        url="https://vasfvitor.github.io/buladiff/"
+        made="Python"
+      />
+      <Project
+        title="mercos-sdk"
+        desc="TypeScript SDK for the Mercos integration API."
+        url="https://github.com/vasfvitor/mercos-sdk"
+        made="TypeScript"
+      />
+      <br />
+      <p>
+        More on <a href="https://github.com/vasfvitor/">GitHub</a>.
+      </p>
+    </section>
+    <section class="projects">
+      <h2>Earlier work</h2>
       <Project
         title="Custom MT5 Expert Advisor"
         desc="MetaTrader 5 Expert Advisor - EA, made according to client's personal strategy and definitions. Closed Source."
         made="MQL5 (MetaQuotes Language 5), a C++ syntax language with OOP"
       >
         <Image src={ea} alt="Demo from the EA" />
-         This was actully a challenge since I had to learn the basics of day
+        This was actually a challenge since I had to learn the basics of day
         trading to be able to understand and translate the strategy to code. I'm
         grateful for all the support folks at MQL5 forum provided.
       </Project>
-      <Project
-        title="Elder Futhark Runes"
-        desc="Webapp showing animated cards Runes from Norse Elder Futhark"
-        url="https://elder-futhark-runes.pages.dev/"
-        made="Vite, Svelte, Flowbite, Typescript and original card designs"
-      >
-        <Image src={runes1} alt="GIF: Rune card" />
-         This was really fun to do and get to know more about each Rune and it's
-        meaning. It's something, isn't? Had to do a bit of research into the
-        writing and history to use the right text font.
-      </Project>
-      <br />
-      <p>
-        See my OSS contributions on <a href="https://github.com/vasfvitor/"
-          >GitHub</a
-        >
-      </p>
     </section>
     <section>
       <h2>Get in touch</h2>
       <a href="mailto:vasfvitor@virtuaires.com.br">Send an email</a> or reach me
-      on <a href="https://www.linkedin.com/in/ayresvitor/">LinkedIn</a>. Bonus
-      point if you there's a pun intended.
+      on <a href="https://www.linkedin.com/in/ayresvitor/">LinkedIn</a>.
     </section>
   </main>
 </BaseLayout>

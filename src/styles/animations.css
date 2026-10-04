@@ -1,36 +1,42 @@
-@keyframes enter-2 {
-  0% {
-    transform: translate(-2000px, 0);
+@keyframes sign-draw {
+  from {
+    stroke-dashoffset: 1;
   }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes sign-fill {
+  from {
+    fill-opacity: 0;
+    stroke: hsl(50, 100%, 65%);
+  }
+  to {
+    fill-opacity: 1;
+    stroke: black;
+  }
+}
+
+@keyframes circle-in {
+  from {
+    scale: 0;
+  }
+  to {
+    scale: 1;
+  }
+}
+
+@keyframes sway {
+  0%,
   100% {
-    transform: translate(0);
+    rotate: 0deg;
   }
-}
-
-@keyframes enter-1 {
-  from {
-    transform: translate(1000px, -2000px);
+  25% {
+    rotate: 3deg;
   }
-  to {
-    transform: translate(0);
-  }
-}
-
-@keyframes reveal {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes scale-in {
-  from {
-    transform: scale(0);
-  }
-  to {
-    transform: scale(1);
+  75% {
+    rotate: -3deg;
   }
 }
 
@@ -43,6 +49,31 @@
   }
 }
 
-/* 
-  @media (prefers-reduced-motion) {
-  } */
+@keyframes glow-pulse {
+  from {
+    filter: brightness(1);
+  }
+  to {
+    filter: brightness(1.6);
+  }
+}
+
+@keyframes word-in {
+  from {
+    opacity: 0;
+    translate: 0 0.4em;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

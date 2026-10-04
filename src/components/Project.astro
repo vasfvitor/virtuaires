@@ -7,22 +7,26 @@ interface Props {
 }
 
 const { title, url, desc, made } = Astro.props;
-const id = title.replaceAll(" ", "");
 ---
 
 <style>
   .wrapper {
-    margin-top: 3rem;
-    position: relative;
+    margin-top: 2.25rem;
   }
-  a {
-    display: block;
-    width: fit-content;
+
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    column-gap: 1.5rem;
   }
 
   h3 {
     position: relative;
     margin: 0;
+    font-size: 1.2rem;
+    line-height: 1.4;
   }
 
   h3::before {
@@ -38,42 +42,44 @@ const id = title.replaceAll(" ", "");
     background-size: contain;
     z-index: -20;
   }
+
+  h3 a {
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+  }
+
+  .made {
+    font-style: italic;
+    font-size: 0.85rem;
+    color: var(--footnotes-border-color);
+  }
+
+  p {
+    margin-top: 0.25rem;
+  }
+
+  .body {
+    margin-top: 0.5rem;
+    text-align: justify;
+    hyphens: auto;
+  }
+
+  @media only screen and (max-width: 720px) {
+    h3::before {
+      left: -18px;
+    }
+  }
 </style>
 
 <div class="wrapper">
-  <a href={url}><h3>{title}</h3></a>
-
-  <article>
-    <slot name="description" />
-    {desc}
-    {
-      made && (
-        <>
-          <label for={id} class="sidenote-toggle">
-            <svg
-              width="20px"
-              height="20px"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <g id="Info">
-                <path
-                  id="Vector"
-                  d="M12 11V16M12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21ZM12.0498 8V8.1L11.9502 8.1002V8H12.0498Z"
-                  stroke="var(--body-color)"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </g>
-            </svg>
-          </label>
-          <input type="checkbox" id={id} class="sidenote-toggle" />
-          <span class="sidenote">{made}</span>
-        </>
-      )
-    }
-  </article>
-  <slot />
+  <header>
+    <h3>{url ? <a href={url}>{title}</a> : title}</h3>
+    {made && <span class="made">{made}</span>}
+  </header>
+  <p>{desc}</p>
+  {Astro.slots.has("default") && (
+    <div class="body">
+      <slot />
+    </div>
+  )}
 </div>
