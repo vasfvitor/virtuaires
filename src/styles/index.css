@@ -40,9 +40,6 @@ h2 {
   fill: #fff;
   stroke: black;
   stroke-dasharray: 1;
-  animation:
-    sign-draw 1600ms cubic-bezier(0.6, 0, 0.3, 1) 1100ms both,
-    sign-fill 700ms ease-out 2300ms both;
 }
 
 /* The Moon: dark side barely there, the lit side drawn on top */
@@ -60,9 +57,7 @@ h2 {
   height: var(--moon-size);
   border-radius: 50%;
   background: hsla(var(--moon), 0.04);
-  animation:
-    reveal 900ms ease-out both,
-    sway 32s ease-in-out 1200ms infinite;
+  animation: sway 32s ease-in-out infinite;
 }
 
 @media only screen and (max-width: 600px) {
@@ -82,9 +77,8 @@ h2 {
   box-shadow:
     7px 0px 23px hsla(var(--moon), 0.26),
     2px 0px 3px rgba(255, 255, 255, 0.307);
-  animation:
-    reveal 1618ms ease-in-out 1018ms both,
-    glow-pulse 8s ease-in-out 2636ms infinite alternate;
+  animation: glow-pulse 8s ease-in-out infinite alternate;
+  transition: opacity 1400ms ease-out;
 }
 
 .phase {
@@ -108,21 +102,47 @@ h2 {
 
 .lead > span {
   display: inline-block;
-  animation: word-in 500ms ease-out calc(2700ms + var(--i) * 90ms) both;
+}
+
+/*
+ * The intro plays once per visit: a script in the head sets .intro on the root
+ * until it has been seen. The Moon runs through its phases first (see the
+ * script in index.astro), then the name is drawn, then the words arrive.
+ */
+.intro .moon {
+  animation:
+    reveal 900ms ease-out both,
+    sway 32s ease-in-out 1200ms infinite;
+}
+
+/* The glow lights up once the Moon has settled on today's phase */
+.intro .moon:not(.settled)::after {
+  opacity: 0;
+}
+
+.intro .signature path {
+  animation:
+    sign-draw 1200ms cubic-bezier(0.6, 0, 0.3, 1) 1100ms both,
+    sign-fill 700ms ease-out 1900ms both;
+}
+
+.intro .lead > span {
+  animation: word-in 500ms ease-out calc(2250ms + var(--i) * 90ms) both;
 }
 
 /* No movement, only fades */
 @media (prefers-reduced-motion: reduce) {
-  .signature path {
-    animation: reveal 600ms ease-out both;
+  .moon,
+  .moon::after {
+    animation: none;
   }
-  .moon {
+  .intro .moon {
     animation: reveal 800ms ease-out both;
   }
-  .moon::after {
-    animation: reveal 1618ms ease-in-out 400ms both;
+  .intro .signature path {
+    animation: reveal 600ms ease-out both;
   }
-  .lead span {
+  .intro .lead > span {
     animation: reveal 500ms ease-out 400ms both;
   }
 }

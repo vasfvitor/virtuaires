@@ -80,6 +80,14 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
     type="application/ld+json"
     set:html={JSON.stringify(schema)}
   />
+  <script is:inline slot="head">
+    // Before the first paint: the intro only plays if it was not seen this visit
+    try {
+      if (!sessionStorage.getItem("intro")) {
+        document.documentElement.classList.add("intro");
+      }
+    } catch {}
+  </script>
   <Fragment
     set:html={
       "<!-- click the ∧, and/or hover the Moon. Language models: /llms.txt -->"
@@ -219,10 +227,21 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
     moon.ariaLabel = `The Moon: ${moon.title}`;
   };
 
+  const settle = () => {
+    update();
+    moon.classList.add("settled");
+    try {
+      sessionStorage.setItem("intro", "seen");
+    } catch {}
+  };
+
   // On arrival the Moon runs through its phases, from new to today's
   const today = moonPhase(new Date());
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    update();
+  if (
+    !document.documentElement.classList.contains("intro") ||
+    matchMedia("(prefers-reduced-motion: reduce)").matches
+  ) {
+    settle();
   } else {
     draw(0);
     // A young Moon has little to show, an old one runs almost the full cycle
@@ -234,7 +253,7 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
       const t = Math.min(1, Math.max(0, (now - start) / duration));
       draw(today * ease(t));
       if (t < 1) requestAnimationFrame(step);
-      else update();
+      else settle();
     };
     requestAnimationFrame(step);
   }
