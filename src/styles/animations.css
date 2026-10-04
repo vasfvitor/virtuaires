@@ -10,7 +10,7 @@
 @keyframes sign-fill {
   from {
     fill-opacity: 0;
-    stroke: hsl(203, 100%, 70%);
+    stroke: var(--accent);
   }
   to {
     fill-opacity: 1;

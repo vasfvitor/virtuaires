@@ -12,6 +12,13 @@ body.latex-dark {
   --link-focus-outline: var(--accent);
 }
 
+/* On wide-gamut screens the accent can be more vivid than sRGB allows */
+@media (color-gamut: p3) {
+  body.latex-dark {
+    --accent: color(display-p3 0.3 0.76 1);
+  }
+}
+
 h2:not(.lead),
 h3 {
   color: hsl(215, 40%, 96%);

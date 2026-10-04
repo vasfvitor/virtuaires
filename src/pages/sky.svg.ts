@@ -19,11 +19,12 @@ const CLASSES = [
   [6, 1, 0.4],
 ] as const;
 
-/** Upper B-V bound and colour, from hot blue-white stars to cool golden ones */
+/** Upper B-V bound and colour, from hot blue-white stars to cool golden ones.
+    The third value is a more saturated version for wide-gamut screens */
 const COLORS = [
-  [0.3, "#cfdcff"],
-  [1, "#fff6e0"],
-  [Infinity, "#ffcf87"],
+  [0.3, "#cfdcff", "color(display-p3 0.76 0.85 1)"],
+  [1, "#fff6e0", "color(display-p3 1 0.96 0.86)"],
+  [Infinity, "#ffcf87", "color(display-p3 1 0.79 0.46)"],
 ] as const;
 
 const radius = 90 + LIMIT;
@@ -53,7 +54,7 @@ const paths = [...dots].flatMap(([key, d]) => {
   const [size, color] = key.split(" ").map(Number);
   const [, width, opacity] = CLASSES[size];
   const path = (w: number, o: number) =>
-    `<path stroke="${COLORS[color][1]}" stroke-width="${w}" stroke-opacity="${o}" d="${d.join("")}"/>`;
+    `<path class="c${color}" stroke-width="${w}" stroke-opacity="${o}" d="${d.join("")}"/>`;
   // The brightest stars also get a faint halo
   return size < 2
     ? [path(width * 3.2, 0.12), path(width, opacity)]
@@ -69,7 +70,14 @@ const glow = (milkyWay as [number, number][][][]).map((rings) => {
   return `<path d="${d.join("")}"/>`;
 });
 
-const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-radius} ${-radius} ${radius * 2} ${radius * 2}"><style>path{vector-effect:non-scaling-stroke}</style><filter id="b"><feGaussianBlur stdDeviation="1.6"/></filter><g fill="#cdd6f2" fill-opacity=".05" fill-rule="evenodd" filter="url(#b)">${glow.join("")}</g><g fill="none" stroke-linecap="round">${paths.join("")}</g></svg>`;
+const tints =
+  COLORS.map(([, srgb], i) => `.c${i}{stroke:${srgb}}`).join("") +
+  `@media (color-gamut:p3){${COLORS.map(([, , p3], i) => `.c${i}{stroke:${p3}}`).join("")}}`;
+
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-radius} ${-radius} ${radius * 2} ${radius * 2}"><style>path{vector-effect:non-scaling-stroke}${tints}</style><filter id="b"><feGaussianBlur stdDeviation="1.6"/></filter><g fill="#cdd6f2" fill-opacity=".05" fill-rule="evenodd" filter="url(#b)">${glow.join("")}</g><g fill="none" stroke-linecap="round">${paths.join("")}</g></svg>`;
 
 export const GET: APIRoute = () =>
-  new Response(svg, { headers: { "Content-Type": "image/svg+xml" } });
+  new Response(svg, {
+    // The dev server would otherwise let browsers keep an old copy
+    headers: { "Content-Type": "image/svg+xml", "Cache-Control": "no-store" },
+  });
