@@ -226,10 +226,6 @@ h2:not(.lead) {
   border-top: 1px solid var(--footnotes-border-color);
   font-size: 0.8rem;
   color: var(--footnotes-border-color);
-}
-
-.colophon p {
-  margin-top: 0.25rem;
   text-align: left;
 }
 
