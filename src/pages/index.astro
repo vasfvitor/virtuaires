@@ -23,8 +23,8 @@ const now = new Date();
 const phase = moonPhase(now);
 
 const lead = [
-  ["Write,", "improve,", "fix"],
-  ["&", "document", "code"],
+  ["Making", "software"],
+  ["easier", "to", "understand"],
 ];
 ---
 
@@ -43,7 +43,7 @@ const lead = [
           <>
             {line.map((word, w) => (
               <>
-                <span style={`--i: ${l * 3 + w}`}>{word}</span>{" "}
+                <span style={`--i: ${l * 2 + w}`}>{word}</span>{" "}
               </>
             ))}
             {l === 0 && <br />}
