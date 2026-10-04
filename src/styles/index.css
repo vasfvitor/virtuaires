@@ -4,6 +4,10 @@ h1 {
 }
 body {
   --body-bg-color: hsl(225, 16%, 11%);
+  /* Moonlight: pale enough to stay clean when it is laid thinly over the dark */
+  --moon: 44, 62%, 84%;
+  --link-visited: hsl(44, 70%, 80%);
+  --link-focus-outline: hsl(44, 70%, 80%);
 }
 
 main {
@@ -102,9 +106,9 @@ h2:not(.lead) {
   width: 100%;
   height: 100%;
   border-radius: 100%;
-  outline: hsla(50, 100%, 65%, 0.2) solid 1px;
+  outline: hsla(var(--moon), 0.25) solid 1px;
   box-shadow:
-    7px 0px 23px hsla(50, 100%, 65%, 0.33),
+    7px 0px 23px hsla(var(--moon), 0.26),
     2px 0px 3px rgba(255, 255, 255, 0.307);
   animation:
     glow-ring 1618ms ease-in-out 1018ms both,
@@ -118,7 +122,7 @@ h2:not(.lead) {
   background: radial-gradient(
     circle at 90% 20%,
     rgba(0, 0, 0, 0),
-    hsla(50, 100%, 65%, 0.2)
+    hsla(var(--moon), 0.14)
   );
   /* The three circles touch at their rightmost point: grow out of it */
   transform-origin: 100% 50%;
@@ -127,7 +131,7 @@ h2:not(.lead) {
 
 /* The largest circle is the Moon: dark side barely there, lit side on top */
 .circle.circle-first {
-  background: hsla(50, 100%, 65%, 0.05);
+  background: hsla(var(--moon), 0.04);
   width: var(--width);
   height: var(--width);
   top: 20px;
@@ -140,7 +144,7 @@ h2:not(.lead) {
 .phase {
   position: absolute;
   inset: 0;
-  fill: hsla(50, 100%, 65%, 0.22);
+  fill: hsla(var(--moon), 0.3);
 }
 
 .circle.circle-first > .circle.circle-second {
@@ -204,6 +208,6 @@ h2:not(.lead) {
   font-size: 1.45rem;
   line-height: 1.15;
   margin: 0.4rem 0 0;
-  color: hsl(50, 15%, 80%);
+  color: hsl(44, 20%, 82%);
   text-align: center;
 }
