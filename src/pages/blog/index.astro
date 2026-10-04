@@ -17,7 +17,7 @@ import BaseLayout from "@components/Layout/BaseLayout.astro";
         {
           posts.map((post, i) => (
             <li>
-              <a href={`/blog/${post.slug}/`}>
+              <a href={`/blog/${post.id}/`}>
                 <img
                   transition:name={i < 3 ? `post-${post.data.pubDate}` : `${i}`}
                   width={720}

@@ -1,18 +1,16 @@
 import { OGImageRoute } from "astro-og-canvas";
 
-export const { getStaticPaths, GET } = OGImageRoute({
-  // Tell us the name of your dynamic route segment.
-  // In this case it’s `route`, because the file is named `[...route].ts`.
-  param: "route",
+type Page = { frontmatter: { title: string; description: string } };
 
+export const { getStaticPaths, GET } = await OGImageRoute({
   // A collection of pages to generate images for.
   // This can be any map of paths to data, not necessarily a glob result.
-  pages: await import.meta.glob("/src/content/**/*.md", { eager: true }),
+  pages: import.meta.glob<Page>("/src/content/**/*.md", { eager: true }),
 
   // For each page, this callback will be used to customize the OpenGraph
   // image. For example, if `pages` was passed a glob like above, you
   // could read values from frontmatter.
-  getImageOptions: (path, page) => ({
+  getImageOptions: (_path, page) => ({
     title: page.frontmatter.title,
     description: page.frontmatter.description,
 
