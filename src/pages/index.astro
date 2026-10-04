@@ -1,7 +1,7 @@
 ---
 import { SITE_TITLE, SITE_DESCRIPTION } from "~/consts";
 import BaseLayout from "@components/Layout/BaseLayout.astro";
-import { Image } from "astro:assets";
+import { Image, getImage } from "astro:assets";
 
 import profile from "/src/assets/images/pfp.jpg";
 
@@ -20,11 +20,64 @@ const signature = Vitor.replace("<path", '<path pathLength="1"');
 // The Moon as of the build; the script below brings it up to date
 const phase = moonPhase(new Date());
 
+// What search engines are told about who this page is about
+const site = Astro.site!;
+const portrait = await getImage({ src: profile, width: 600, format: "jpg" });
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "ProfilePage",
+  url: site.href,
+  name: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  inLanguage: "en",
+  mainEntity: {
+    "@type": "Person",
+    "@id": `${site.href}#me`,
+    name: "Vitor Ayres",
+    alternateName: ["Ayres Vitor", "vasfvitor"],
+    url: site.href,
+    image: new URL(portrait.src, site).href,
+    description: SITE_DESCRIPTION,
+    jobTitle: "Software engineer",
+    email: "mailto:vasfvitor@virtuaires.com.br",
+    memberOf: {
+      "@type": "Organization",
+      name: "Tauri Working Group",
+      url: "https://tauri.app/",
+    },
+    knowsAbout: [
+      "Open source software",
+      "Technical documentation",
+      "Tauri",
+      "Astro",
+      "Starlight",
+      "TypeScript",
+      "Go",
+      "Python",
+      "Rust",
+    ],
+    sameAs: [
+      "https://github.com/vasfvitor",
+      "https://www.linkedin.com/in/ayresvitor/",
+    ],
+  },
+};
+
 // "∧" is the logical and: both sides at once
 const lead = ["Having", "fun", "∧", "solving", "problems"];
 ---
 
-<BaseLayout {SITE_TITLE} {SITE_DESCRIPTION}>
+<BaseLayout
+  SITE_TITLE={`${SITE_TITLE}, software engineer and open source developer`}
+  {SITE_DESCRIPTION}
+  type="profile"
+>
+  <script
+    is:inline
+    slot="head"
+    type="application/ld+json"
+    set:html={JSON.stringify(schema)}
+  />
   <Fragment
     set:html={
       "<!-- click the ∧, and/or hover the Moon. Language models: /llms.txt -->"
@@ -83,10 +136,10 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
         alt="Vitor Ayres artistic profile - made by a real person"
       />
       <p>
-        I enjoy solving puzzles and problems. It started with high school math
-        and turned into code when a job needed a solution I had to program
-        myself. And now I can solve problems with AI faster than ever. Or create
-        new ones.
+        I'm a software engineer who enjoys solving puzzles and problems. It
+        started with high school math and turned into code when a job needed a
+        solution I had to program myself. And now I can solve problems with AI
+        faster than ever. Or create new ones.
       </p>
     </section>
     <section class="projects">

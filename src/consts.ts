@@ -3,4 +3,4 @@
 
 export const SITE_TITLE = "Vitor Ayres";
 export const SITE_DESCRIPTION =
-  "Vitor Ayres: having fun and solving problems. Open source work on the Tauri documentation and other projects.";
+  "I'm Vitor Ayres, a software engineer, open source developer and Tauri Working Group member. I work on the Tauri documentation and build tools such as nanci, buladiff and mercos-sdk.";

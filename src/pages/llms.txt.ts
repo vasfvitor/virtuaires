@@ -6,8 +6,6 @@ const text = `# Vitor Ayres
 
 > ${SITE_DESCRIPTION}
 
-Tauri Working Group member, working mostly on the Tauri documentation.
-
 - [Home](https://eu.virtuaires.com.br/)
 - [GitHub](https://github.com/vasfvitor/)
 - [LinkedIn](https://www.linkedin.com/in/ayresvitor/)

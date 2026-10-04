@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://eu.virtuaires.com.br/sitemap-index.xml

@@ -8,11 +8,22 @@ interface Props {
   title: string;
   description: string;
   image?: string;
+  /** Keeps the page out of search results */
+  noindex?: boolean;
+  /** Open Graph type: the home page is a profile */
+  type?: "website" | "profile";
 }
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
-const { title, description, image = "/og.jpg" } = Astro.props;
+const {
+  title,
+  description,
+  image = "/og.jpg",
+  noindex = false,
+  type = "website",
+} = Astro.props;
+const imageAlt = "A total solar eclipse over a field of stars";
 ---
 
 <!-- Global Metadata -->
@@ -42,15 +53,30 @@ const { title, description, image = "/og.jpg" } = Astro.props;
 <title>{title}</title>
 <meta name="title" content={title} />
 <meta name="description" content={description} />
+<meta name="author" content="Vitor Ayres" />
+<meta
+  name="robots"
+  content={noindex ? "noindex" : "index, follow, max-image-preview:large"}
+/>
 
 <!-- Open Graph / Facebook -->
-<meta property="og:type" content="website" />
+<meta property="og:type" content={type} />
+<meta property="og:site_name" content="Vitor Ayres" />
+<meta property="og:locale" content="en_US" />
+{type === "profile" && (
+  <>
+    <meta property="profile:first_name" content="Vitor" />
+    <meta property="profile:last_name" content="Ayres" />
+    <meta property="profile:username" content="vasfvitor" />
+  </>
+)}
 <meta property="og:url" content={Astro.url} />
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
 <meta property="og:image" content={new URL(image, Astro.url)} />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content={imageAlt} />
 
 <!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image" />
@@ -58,6 +84,7 @@ const { title, description, image = "/og.jpg" } = Astro.props;
 <meta name="twitter:title" content={title} />
 <meta name="twitter:description" content={description} />
 <meta name="twitter:image" content={new URL(image, Astro.url)} />
+<meta name="twitter:image:alt" content={imageAlt} />
 
 <!-- Analytics, only on the published domains -->
 <script
