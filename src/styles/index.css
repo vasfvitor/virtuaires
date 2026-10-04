@@ -75,10 +75,6 @@ h2:not(.lead) {
   :root {
     --width: 180px;
   }
-
-  main p {
-    text-align: left;
-  }
 }
 
 .signature {

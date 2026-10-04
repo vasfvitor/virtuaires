@@ -109,11 +109,10 @@ h3 {
   margin-bottom: 0.8rem;
 }
 
-/* Justified and hyphenated, as in a typeset page */
 p {
   margin-top: 1rem;
-  text-align: justify;
-  hyphens: auto;
+  /* Avoids a lone word on the last line */
+  text-wrap: pretty;
 }
 
 a {

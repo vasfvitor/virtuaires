@@ -62,14 +62,7 @@ const { title, url, desc, made } = Astro.props;
 
   .body {
     margin-top: 0.5rem;
-    text-align: justify;
-    hyphens: auto;
-  }
-
-  @media only screen and (max-width: 600px) {
-    .body {
-      text-align: left;
-    }
+    text-wrap: pretty;
   }
 </style>
 
