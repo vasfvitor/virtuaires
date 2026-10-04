@@ -3,7 +3,8 @@ interface Props {
   title: string;
   url?: string;
   made?: string;
-  desc: string;
+  /** Plain description; use the "desc" slot instead when it needs markup */
+  desc?: string;
 }
 
 const { title, url, desc, made } = Astro.props;
@@ -77,7 +78,9 @@ const { title, url, desc, made } = Astro.props;
     <h3>{url ? <a href={url}>{title}</a> : title}</h3>
     {made && <span class="made">{made}</span>}
   </header>
-  <p>{desc}</p>
+  <p>
+    <slot name="desc">{desc}</slot>
+  </p>
   {Astro.slots.has("default") && (
     <div class="body">
       <slot />

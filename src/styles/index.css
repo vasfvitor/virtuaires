@@ -19,6 +19,11 @@ body.latex-dark {
   }
 }
 
+/* Visited links shift towards violet, so they can be told apart */
+body.latex-dark main a:visited {
+  color: hsl(255, 85%, 82%);
+}
+
 h2:not(.lead),
 h3 {
   color: hsl(215, 40%, 96%);
