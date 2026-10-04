@@ -1,0 +1,4 @@
+# Both ship prebuilt binaries, so their install scripts are not needed
+allowBuilds:
+  "@parcel/watcher": false
+  esbuild: false
