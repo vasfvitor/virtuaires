@@ -1,32 +1,11 @@
-/* A night palette: navy ground, cool white text, one sky blue accent.
-   The class is needed to win over the theme variables in latex-mod.css */
-body.latex-dark {
-  --body-bg-color: hsl(222, 45%, 8%);
-  --body-color: hsl(215, 25%, 88%);
-  --footnotes-border-color: hsl(218, 18%, 64%);
-  --kbd-border-color: hsl(218, 20%, 40%);
-  --accent: hsl(203, 100%, 70%);
-  /* Moonlight: pale enough to stay clean when it is laid thinly over the dark */
-  --moon: 210, 45%, 90%;
-  --link-visited: var(--accent);
-  --link-focus-outline: var(--accent);
-}
-
-/* On wide-gamut screens the accent can be more vivid than sRGB allows */
-@media (color-gamut: p3) {
-  body.latex-dark {
-    --accent: color(display-p3 0.3 0.76 1);
-  }
-}
-
 /* Visited links shift towards violet, so they can be told apart */
-body.latex-dark main a:visited {
+main a:visited {
   color: hsl(255, 85%, 82%);
 }
 
 h2:not(.lead),
 h3 {
-  color: hsl(215, 40%, 96%);
+  color: var(--heading);
 }
 
 main {
@@ -233,9 +212,9 @@ h2:not(.lead) {
   hyphens: none;
   /* Keeps the words readable where they cross the lit side of the Moon */
   text-shadow:
-    0 0 0.12em var(--body-bg-color),
-    0 0 0.3em var(--body-bg-color),
-    0 0 0.6em var(--body-bg-color);
+    0 0 0.12em var(--ground),
+    0 0 0.3em var(--ground),
+    0 0 0.6em var(--ground);
 }
 
 /* On paper the page becomes a plain typeset sheet: no sky, dark ink on white */
@@ -244,11 +223,15 @@ h2:not(.lead) {
     margin: 2cm;
   }
 
-  body.latex-dark {
-    --body-bg-color: white;
-    --body-color: #111;
-    --footnotes-border-color: #555;
+  :root {
+    --ground: white;
+    --text: #111;
+    --heading: #000;
+    --muted: #555;
     --accent: #111;
+  }
+
+  body {
     max-width: none;
     padding: 0;
     font-size: 11pt;
@@ -281,17 +264,12 @@ h2:not(.lead) {
     box-shadow: none;
   }
 
-  h2:not(.lead),
-  h3 {
-    color: #000;
-  }
-
   h2:not(.lead) {
     margin-top: 2rem;
     clear: both;
   }
 
-  body.latex-dark main a:visited {
+  main a:visited {
     color: inherit;
   }
 

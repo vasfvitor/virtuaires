@@ -1,0 +1,140 @@
+/* Base styles shared by every page */
+
+@font-face {
+  font-family: "Libertinus";
+  font-style: normal;
+  font-weight: normal;
+  font-display: block;
+  src: url("/fonts/Libertinus-regular.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Libertinus";
+  font-style: italic;
+  font-weight: normal;
+  font-display: block;
+  src: url("/fonts/Libertinus-italic.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Libertinus";
+  font-style: normal;
+  font-weight: bold;
+  font-display: block;
+  src: url("/fonts/Libertinus-bold.woff2") format("woff2");
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* A night palette: navy ground, cool white text, one sky blue accent */
+:root {
+  --ground: hsl(222, 45%, 8%);
+  --text: hsl(215, 25%, 88%);
+  --heading: hsl(215, 40%, 96%);
+  /* Secondary text and rules */
+  --muted: hsl(218, 18%, 64%);
+  --rule: hsl(218, 20%, 40%);
+  --accent: hsl(203, 100%, 70%);
+  /* Moonlight: pale enough to stay clean when it is laid thinly over the dark */
+  --moon: 210, 45%, 90%;
+}
+
+/* On wide-gamut screens the accent can be more vivid than sRGB allows */
+@media (color-gamut: p3) {
+  :root {
+    --accent: color(display-p3 0.3 0.76 1);
+  }
+}
+
+html {
+  font-size: 1.25rem;
+}
+
+body {
+  font-family: "Libertinus", Georgia, Cambria, "Times New Roman", Times, serif;
+  line-height: 1.8;
+  max-width: 80ch;
+  min-height: 100vh;
+  overflow-x: hidden;
+  margin: 0 auto;
+  padding: 2rem 1.25rem;
+  color: var(--text);
+  background-color: var(--ground);
+  text-rendering: optimizeLegibility;
+}
+
+main {
+  margin: auto;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 2.5rem;
+  line-height: 3.25rem;
+  margin-bottom: 1.625rem;
+  text-align: center;
+}
+
+h2 {
+  font-size: 1.7rem;
+  line-height: 2rem;
+  margin-top: 3rem;
+  margin-bottom: 0.8rem;
+}
+
+h3 {
+  font-size: 1.4rem;
+  line-height: 1.625rem;
+  margin-top: 2.5rem;
+  margin-bottom: 0.8rem;
+}
+
+/* Justified and hyphenated, as in a typeset page */
+p {
+  margin-top: 1rem;
+  text-align: justify;
+  hyphens: auto;
+}
+
+a {
+  color: var(--accent);
+  text-decoration-skip-ink: auto;
+}
+
+a:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+button {
+  font: inherit;
+}
+
+/* Present for screen readers, invisible on screen */
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
