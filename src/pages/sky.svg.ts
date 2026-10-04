@@ -1,14 +1,13 @@
 import type { APIRoute } from "astro";
 import stars from "../data/stars.json";
 import milkyWay from "../data/milkyway.json";
+import { UP } from "../lib/sky";
 
 // The southern sky as seen from the ground: an azimuthal equidistant
 // projection centred on the south celestial pole, one unit per degree.
 
 /** Northernmost declination in the data, in degrees */
 const LIMIT = 40;
-/** Right ascension drawn straight up from the pole: the Southern Cross */
-const UP = 187;
 
 /** Upper magnitude bound, dot diameter in px and opacity of each brightness class */
 const CLASSES = [

@@ -49,15 +49,6 @@ h2:not(.lead) {
   animation: reveal 1618ms ease-out both;
 }
 
-/* The sky turns around the pole, far slower than the real one would be seen */
-@media (prefers-reduced-motion: no-preference) and (min-width: 900px) {
-  .sky {
-    animation:
-      reveal 1618ms ease-out both,
-      sky-turn 1800s linear infinite;
-  }
-}
-
 .hero {
   color: white;
   padding-block: 100px 70px;
@@ -134,7 +125,9 @@ h2:not(.lead) {
   animation: circle-in 1200ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
+/* The largest circle is the Moon: dark side barely there, lit side on top */
 .circle.circle-first {
+  background: hsla(50, 100%, 65%, 0.05);
   width: var(--width);
   height: var(--width);
   top: 20px;
@@ -142,6 +135,12 @@ h2:not(.lead) {
   animation:
     circle-in 1200ms cubic-bezier(0.2, 0.8, 0.2, 1) both,
     sway 32s ease-in-out 1200ms infinite;
+}
+
+.phase {
+  position: absolute;
+  inset: 0;
+  fill: hsla(50, 100%, 65%, 0.22);
 }
 
 .circle.circle-first > .circle.circle-second {

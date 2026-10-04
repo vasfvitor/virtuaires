@@ -10,12 +10,17 @@ import Project from "@components/Project.astro";
 
 import Vitor from "/Vitor.svg?raw";
 import stars from "../data/stars.json";
+import { litFromLeft, litPath, moonPhase, skyAngle } from "../lib/sky";
 
 import "../styles/animations.css";
 import "../styles/index.css";
 
 // Lets the signature be drawn with a single normalized dash
 const signature = Vitor.replace("<path", '<path pathLength="1"');
+
+// The sky and the Moon as of the build; the script below brings them up to date
+const now = new Date();
+const phase = moonPhase(now);
 
 const lead = [
   ["Write,", "improve,", "fix"],
@@ -24,7 +29,11 @@ const lead = [
 ---
 
 <BaseLayout {SITE_TITLE} {SITE_DESCRIPTION}>
-  <div class="sky" aria-hidden="true"></div>
+  <div
+    class="sky"
+    aria-hidden="true"
+    style={`rotate: ${skyAngle(now)}deg`}
+  ></div>
   <header class="hero">
     <div style="z-index: 60">
       <h1 class="sr-only">Vitor Ayres</h1>
@@ -43,6 +52,12 @@ const lead = [
       </h2>
     </div>
     <div class="circle circle-first">
+      <svg class="phase" viewBox="-1 -1 2 2" aria-hidden="true">
+        <path
+          d={litPath(phase)}
+          transform={litFromLeft(phase) ? "scale(-1 1)" : undefined}
+        ></path>
+      </svg>
       <div class="circle circle-second">
         <div class="circle circle-final"></div>
       </div>
@@ -146,10 +161,32 @@ const lead = [
       {stars.length.toLocaleString("en")} stars visible to the naked eye south
       of +40° declination, each placed by its coordinates, sized by its
       brightness and tinted by its temperature. The faint glow is the Milky Way.
-      The view is centred on the south celestial pole, with the Southern Cross
-      above it, and on larger screens it turns slowly around that pole, as the
-      sky does over Brazil. Data from the Hipparcos catalogue, via{" "}
+      The view is centred on the south celestial pole and turned to match the
+      sky right now on Brasília time, and the disc behind my name shows today's
+      phase of the Moon as seen from the southern hemisphere. Data from the
+      Hipparcos catalogue, via{" "}
       <a href="https://github.com/ofrohn/d3-celestial">d3-celestial</a>.
     </p>
   </main>
 </BaseLayout>
+
+<script>
+  import { litFromLeft, litPath, moonPhase, skyAngle } from "../lib/sky";
+
+  const sky = document.querySelector<HTMLElement>(".sky")!;
+  const lit = document.querySelector(".phase path")!;
+
+  const update = () => {
+    const now = new Date();
+    const phase = moonPhase(now);
+    sky.style.rotate = `${skyAngle(now)}deg`;
+    lit.setAttribute("d", litPath(phase));
+    lit.setAttribute("transform", litFromLeft(phase) ? "scale(-1 1)" : "");
+  };
+
+  update();
+  // The sky turns a quarter of a degree per minute
+  if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    setInterval(update, 5000);
+  }
+</script>

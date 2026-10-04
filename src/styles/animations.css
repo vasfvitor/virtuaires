@@ -77,9 +77,3 @@
     opacity: 1;
   }
 }
-
-@keyframes sky-turn {
-  to {
-    rotate: 360deg;
-  }
-}
