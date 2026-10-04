@@ -29,16 +29,18 @@ const { title, url, desc, made } = Astro.props;
     line-height: 1.4;
   }
 
-  /* A small four-pointed star in the margin */
+  /* A four-pointed star sitting off the corner of the title, behind it */
   h3::before {
     content: "";
     position: absolute;
-    left: -1.15rem;
-    top: 50%;
-    translate: 0 -50%;
-    width: 0.75rem;
-    height: 0.75rem;
+    z-index: -1;
+    left: -1.05rem;
+    top: -0.6rem;
+    width: 1.7rem;
+    height: 1.7rem;
+    rotate: 14deg;
     background: var(--accent, currentColor);
+    opacity: 0.5;
     mask: url("/star.svg") center / contain no-repeat;
   }
 
