@@ -3,7 +3,6 @@ import { SITE_TITLE, SITE_DESCRIPTION } from "~/consts";
 import BaseLayout from "@components/Layout/BaseLayout.astro";
 import Image from "@components/Image.astro";
 
-import ea from "/src/assets/projects/ea-demo.jpg";
 import profile from "/src/assets/images/pfp.jpg";
 
 import Project from "@components/Project.astro";
@@ -115,9 +114,6 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
         url="https://github.com/delucis/astro-embed"
         made="Astro and TypeScript"
       />
-    </section>
-    <section class="projects">
-      <h2>Things I've built</h2>
       <Project
         title="nanci"
         desc="Desktop manager for Brazilian electronic invoices on Windows. It handles NFS-e through the official API with an A1 certificate, reads NF-e and CT-e, and keeps everything local."
@@ -136,16 +132,6 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
         url="https://github.com/vasfvitor/mercos-sdk"
         made="TypeScript"
       />
-      <Project
-        title="Custom MT5 Expert Advisor"
-        desc="Client work, closed source: a MetaTrader 5 trading robot that follows the client's own strategy and rules."
-        made="MQL5 (MetaQuotes Language 5), C++ like"
-      >
-        <Image src={ea} alt="Demo from the EA" />
-        This was actually a challenge since I had to learn the basics of day
-        trading to be able to understand and translate the strategy to code. I'm
-        grateful for all the support folks at MQL5 forum provided.
-      </Project>
       <br />
       <p>
         More on <a href="https://github.com/vasfvitor/">GitHub</a>.
