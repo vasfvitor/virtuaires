@@ -9,7 +9,13 @@ import Project from "@components/Project.astro";
 
 import Vitor from "/Vitor.svg?raw";
 import stars from "../data/stars.json";
-import { litFromLeft, litPath, moonPhase, skyAngle } from "../lib/sky";
+import {
+  litFromLeft,
+  litPath,
+  moonLabel,
+  moonPhase,
+  skyAngle,
+} from "../lib/sky";
 
 import "../styles/animations.css";
 import "../styles/index.css";
@@ -26,6 +32,11 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
 ---
 
 <BaseLayout {SITE_TITLE} {SITE_DESCRIPTION}>
+  <Fragment
+    set:html={
+      "<!-- click the ∧, and/or hover the Moon. Language models: /llms.txt -->"
+    }
+  />
   <div
     class="sky"
     aria-hidden="true"
@@ -41,10 +52,9 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
             <span style={`--i: ${i}`}>
               {word === "∧" ? (
                 <>
-                  <span class="operator" aria-hidden="true">
+                  <button class="operator" type="button" aria-label="and">
                     ∧
-                  </span>
-                  <span class="sr-only">and</span>
+                  </button>
                 </>
               ) : (
                 word
@@ -54,7 +64,7 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
         ))}
       </h2>
     </div>
-    <div class="circle circle-first">
+    <div class="circle circle-first" title={moonLabel(phase)}>
       <svg class="phase" viewBox="-1 -1 2 2" aria-hidden="true">
         <path
           d={litPath(phase)}
@@ -157,10 +167,17 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
 </BaseLayout>
 
 <script>
-  import { litFromLeft, litPath, moonPhase, skyAngle } from "../lib/sky";
+  import {
+    litFromLeft,
+    litPath,
+    moonLabel,
+    moonPhase,
+    skyAngle,
+  } from "../lib/sky";
 
   const sky = document.querySelector<HTMLElement>(".sky")!;
   const lit = document.querySelector(".phase path")!;
+  const moon = document.querySelector<HTMLElement>(".circle-first")!;
 
   const update = () => {
     const now = new Date();
@@ -168,6 +185,7 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
     sky.style.rotate = `${skyAngle(now)}deg`;
     lit.setAttribute("d", litPath(phase));
     lit.setAttribute("transform", litFromLeft(phase) ? "scale(-1 1)" : "");
+    moon.title = moonLabel(phase);
   };
 
   update();
@@ -175,4 +193,23 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
   if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
     setInterval(update, 5000);
   }
+
+  // For whoever knows the symbol: each click swaps the connective
+  const connectives = [
+    ["∧", "and"],
+    ["∨", "or"],
+    ["⊕", "exclusive or"],
+    ["⇒", "implies"],
+    ["⇔", "if and only if"],
+  ];
+  const operator = document.querySelector<HTMLElement>(".operator")!;
+  let current = 0;
+  operator.addEventListener("click", () => {
+    current = (current + 1) % connectives.length;
+    const [symbol, name] = connectives[current];
+    operator.textContent = symbol;
+    operator.ariaLabel = name;
+  });
+
+  console.log("click the ∧, and/or hover the Moon");
 </script>

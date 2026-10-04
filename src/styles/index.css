@@ -180,6 +180,13 @@ h2:not(.lead) {
   font-size: 1.2em;
   line-height: 0;
   margin-inline: 0.1em;
+  /* It is a button, but it should not look like one */
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  cursor: inherit;
 }
 
 .lead > span {

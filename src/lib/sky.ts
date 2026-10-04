@@ -30,3 +30,21 @@ export const litPath = (phase: number) => {
 
 /** In the southern hemisphere the Moon waxes from the left */
 export const litFromLeft = (phase: number) => phase < 0.5;
+
+/** The phase in words with the lit share of the disc, e.g. "Waning crescent, 39% lit" */
+export const moonLabel = (phase: number) => {
+  const names = [
+    [0.03, "New Moon"],
+    [0.22, "Waxing crescent"],
+    [0.28, "First quarter"],
+    [0.47, "Waxing gibbous"],
+    [0.53, "Full Moon"],
+    [0.72, "Waning gibbous"],
+    [0.78, "Last quarter"],
+    [0.97, "Waning crescent"],
+    [1, "New Moon"],
+  ] as const;
+  const name = names.find(([limit]) => phase <= limit)![1];
+  const lit = Math.round(((1 - Math.cos(2 * Math.PI * phase)) / 2) * 100);
+  return `${name}, ${lit}% lit`;
+};
