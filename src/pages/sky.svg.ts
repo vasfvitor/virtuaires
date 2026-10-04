@@ -69,7 +69,7 @@ const glow = (milkyWay as [number, number][][][]).map((rings) => {
   return `<path d="${d.join("")}"/>`;
 });
 
-const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-radius} ${-radius} ${radius * 2} ${radius * 2}"><style>path{vector-effect:non-scaling-stroke}</style><filter id="b"><feGaussianBlur stdDeviation="1.6"/></filter><g fill="#e6e0cc" fill-opacity=".045" fill-rule="evenodd" filter="url(#b)">${glow.join("")}</g><g fill="none" stroke-linecap="round">${paths.join("")}</g></svg>`;
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-radius} ${-radius} ${radius * 2} ${radius * 2}"><style>path{vector-effect:non-scaling-stroke}</style><filter id="b"><feGaussianBlur stdDeviation="1.6"/></filter><g fill="#cdd6f2" fill-opacity=".05" fill-rule="evenodd" filter="url(#b)">${glow.join("")}</g><g fill="none" stroke-linecap="round">${paths.join("")}</g></svg>`;
 
 export const GET: APIRoute = () =>
   new Response(svg, { headers: { "Content-Type": "image/svg+xml" } });
