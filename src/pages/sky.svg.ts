@@ -70,11 +70,38 @@ const glow = (milkyWay as [number, number][][][]).map((rings) => {
   return `<path d="${d.join("")}"/>`;
 });
 
+// A faint chart grid: declination every 30°, right ascension every two hours
+const parallels = [-60, -30, 0, 30].map(
+  (dec) =>
+    `<circle r="${90 + dec}"${dec === 0 ? ' stroke-opacity=".085"' : ""}/>`,
+);
+const meridians = Array.from({ length: 12 }, (_, hour) => {
+  const [from, to] = [-80, LIMIT].map((dec) =>
+    project(hour * 30, dec)
+      .map(Math.round)
+      .join(" "),
+  );
+  return `M${from}L${to}`;
+});
+
+// The ecliptic, the Sun's yearly path, tilted against the equator
+const TILT = (23.4393 * Math.PI) / 180;
+const ecliptic = Array.from({ length: 72 }, (_, i) => {
+  const lon = (i * 5 * Math.PI) / 180;
+  const dec = Math.asin(Math.sin(TILT) * Math.sin(lon));
+  const ra = Math.atan2(Math.cos(TILT) * Math.sin(lon), Math.cos(lon));
+  return project((ra * 180) / Math.PI, (dec * 180) / Math.PI)
+    .map((n) => n.toFixed(1))
+    .join(" ");
+});
+
+const grid = `<g fill="none" stroke="#9db4ff" stroke-opacity=".05">${parallels.join("")}<path d="${meridians.join("")}"/><path stroke-dasharray="3 6" stroke-opacity=".13" d="M${ecliptic.join("L")}Z"/></g>`;
+
 const tints =
   COLORS.map(([, srgb], i) => `.c${i}{stroke:${srgb}}`).join("") +
   `@media (color-gamut:p3){${COLORS.map(([, , p3], i) => `.c${i}{stroke:${p3}}`).join("")}}`;
 
-const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-radius} ${-radius} ${radius * 2} ${radius * 2}"><style>path{vector-effect:non-scaling-stroke}${tints}</style><filter id="b"><feGaussianBlur stdDeviation="1.6"/></filter><g fill="#cdd6f2" fill-opacity=".05" fill-rule="evenodd" filter="url(#b)">${glow.join("")}</g><g fill="none" stroke-linecap="round">${paths.join("")}</g></svg>`;
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-radius} ${-radius} ${radius * 2} ${radius * 2}"><style>path,circle{vector-effect:non-scaling-stroke}${tints}</style><filter id="b"><feGaussianBlur stdDeviation="1.6"/></filter><g fill="#cdd6f2" fill-opacity=".05" fill-rule="evenodd" filter="url(#b)">${glow.join("")}</g>${grid}<g fill="none" stroke-linecap="round">${paths.join("")}</g></svg>`;
 
 export const GET: APIRoute = () =>
   new Response(svg, {
