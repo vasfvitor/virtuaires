@@ -1,1 +1,3 @@
-Made with Astro + modified [Latex.css](https://latex.vercel.app/style.css) and some custom vanilla css animations
+# virtuaires
+
+[eu.virtuaires.com.br](https://eu.virtuaires.com.br/). Astro + [LaTeX.css](https://latex.vercel.app/).
