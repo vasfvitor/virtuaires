@@ -19,9 +19,9 @@ const { title, description, image = "/og.jpg" } = Astro.props;
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <meta name="theme-color" content="#0b111e" />
-<link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+<link rel="icon" href="/favicon.ico" sizes="32x32" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 {
   /* The faces used at the top of the page, fetched before the text needs them */
   ["regular", "italic", "bold"].map((face) => (
@@ -67,3 +67,15 @@ const { title, description, image = "/og.jpg" } = Astro.props;
   data-website-id="c2bbae60-f170-4d13-a7e0-43fc4b149ab7"
   data-domains="eu.virtuaires.com.br,virtuaires.com.br,www.virtuaires.com.br"
 ></script>
+
+<script>
+  import { litFromLeft, litPath, moonPhase } from "../../lib/sky";
+
+  // The tab icon shows the Moon in its current phase
+  const phase = moonPhase(new Date());
+  const flip = litFromLeft(phase) ? " scale(-1 1)" : "";
+  const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-16 -16 32 32"><circle r="16" fill="#0b111e"/><circle r="12.5" fill="#dfe9f8" fill-opacity=".13"/><path fill="#e6eefb" transform="scale(12.5)${flip}" d="${litPath(phase)}"/></svg>`;
+  document
+    .querySelector('link[rel="icon"][type="image/svg+xml"]')
+    ?.setAttribute("href", `data:image/svg+xml,${encodeURIComponent(icon)}`);
+</script>
