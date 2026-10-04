@@ -217,15 +217,36 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
   const lit = document.querySelector(".phase path")!;
   const moon = document.querySelector<HTMLElement>(".moon")!;
 
-  const update = () => {
-    const phase = moonPhase(new Date());
+  const draw = (phase: number) => {
     lit.setAttribute("d", litPath(phase));
     lit.setAttribute("transform", litFromLeft(phase) ? "scale(-1 1)" : "");
+  };
+
+  const update = () => {
+    const phase = moonPhase(new Date());
+    draw(phase);
     moon.title = moonLabel(phase);
     moon.ariaLabel = `The Moon: ${moon.title}`;
   };
 
-  update();
+  // On arrival the Moon runs through its phases, from new to today's
+  const today = moonPhase(new Date());
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    update();
+  } else {
+    draw(0);
+    const [delay, duration] = [300, 1900];
+    const start = performance.now() + delay;
+    const step = (now: number) => {
+      const t = Math.min(1, Math.max(0, (now - start) / duration));
+      // Eases out, so the last days of the cycle arrive slowly
+      draw(today * (1 - (1 - t) ** 3));
+      if (t < 1) requestAnimationFrame(step);
+      else update();
+    };
+    requestAnimationFrame(step);
+  }
+
   // The phase moves slowly: once an hour keeps a long-open tab honest
   setInterval(update, 3_600_000);
 

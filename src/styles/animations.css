@@ -18,15 +18,6 @@
   }
 }
 
-@keyframes moon-in {
-  from {
-    scale: 0;
-  }
-  to {
-    scale: 1;
-  }
-}
-
 @keyframes sway {
   0%,
   100% {
