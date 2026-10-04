@@ -2,29 +2,30 @@ h1 {
   font-size: 3rem;
   font-family: sans-serif;
 }
-/* A night palette: deep blue ground, moonlit text, one pale gold for links */
-body {
-  --body-bg-color: hsl(228, 20%, 10%);
-  --body-color: hsl(44, 16%, 87%);
-  /* Secondary text and rules, cooled to sit with the ground */
-  --footnotes-border-color: hsl(226, 12%, 64%);
-  --kbd-border-color: hsl(226, 12%, 46%);
+/* A night palette: navy ground, cool white text, one sky blue accent.
+   The class is needed to win over the theme variables in latex-mod.css */
+body.latex-dark {
+  --body-bg-color: hsl(222, 45%, 8%);
+  --body-color: hsl(215, 25%, 88%);
+  --footnotes-border-color: hsl(218, 18%, 64%);
+  --kbd-border-color: hsl(218, 20%, 40%);
+  --accent: hsl(203, 100%, 70%);
   /* Moonlight: pale enough to stay clean when it is laid thinly over the dark */
-  --moon: 44, 62%, 84%;
-  --link-visited: hsl(44, 70%, 80%);
-  --link-focus-outline: hsl(44, 70%, 80%);
+  --moon: 210, 45%, 90%;
+  --link-visited: var(--accent);
+  --link-focus-outline: var(--accent);
 }
 
 h2:not(.lead),
 h3 {
-  color: hsl(44, 30%, 94%);
+  color: hsl(215, 40%, 96%);
 }
 
 main {
   line-height: 1.65;
   /* Dims the sky behind the text */
-  background: hsla(228, 20%, 10%, 0.8);
-  box-shadow: 0 0 5rem 4rem hsla(228, 20%, 10%, 0.8);
+  background: hsla(222, 45%, 8%, 0.8);
+  box-shadow: 0 0 5rem 4rem hsla(222, 45%, 8%, 0.8);
   /* Keeps the star markers above that backdrop */
   position: relative;
   z-index: 0;
@@ -223,6 +224,6 @@ h2:not(.lead) {
   font-size: 1.45rem;
   line-height: 1.15;
   margin: 0.4rem 0 0;
-  color: hsl(44, 20%, 82%);
+  color: hsl(215, 30%, 82%);
   text-align: center;
 }
