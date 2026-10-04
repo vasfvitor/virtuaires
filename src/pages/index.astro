@@ -9,6 +9,7 @@ import profile from "/src/assets/images/pfp.jpg";
 import Project from "@components/Project.astro";
 
 import Vitor from "/Vitor.svg?raw";
+import stars from "../data/stars.json";
 
 import "../styles/animations.css";
 import "../styles/index.css";
@@ -23,6 +24,7 @@ const lead = [
 ---
 
 <BaseLayout {SITE_TITLE} {SITE_DESCRIPTION}>
+  <div class="sky" aria-hidden="true"></div>
   <header class="hero">
     <div style="z-index: 60">
       <h1 class="sr-only">Vitor Ayres</h1>
@@ -139,5 +141,15 @@ const lead = [
       <a href="mailto:vasfvitor@virtuaires.com.br">Send an email</a> or reach me
       on <a href="https://www.linkedin.com/in/ayresvitor/">LinkedIn</a>.
     </section>
+    <p class="colophon">
+      The sky behind this page is drawn from real data: the{" "}
+      {stars.length.toLocaleString("en")} stars visible to the naked eye south
+      of +40° declination, each placed by its coordinates, sized by its
+      brightness and tinted by its temperature. The faint glow is the Milky Way.
+      The view is centred on the south celestial pole, with the Southern Cross
+      above it, and on larger screens it turns slowly around that pole, as the
+      sky does over Brazil. Data from the Hipparcos catalogue, via{" "}
+      <a href="https://github.com/ofrohn/d3-celestial">d3-celestial</a>.
+    </p>
   </main>
 </BaseLayout>

@@ -2,8 +2,18 @@ h1 {
   font-size: 3rem;
   font-family: sans-serif;
 }
+body {
+  --body-bg-color: hsl(225, 16%, 11%);
+}
+
 main {
   line-height: 1.65;
+  /* Dims the sky behind the text */
+  background: hsla(225, 16%, 11%, 0.8);
+  box-shadow: 0 0 5rem 4rem hsla(225, 16%, 11%, 0.8);
+  /* Keeps the star markers above that backdrop */
+  position: relative;
+  z-index: 0;
 }
 
 h2:not(.lead) {
@@ -23,6 +33,29 @@ h2:not(.lead) {
   width: 100px !important;
   height: 100px;
   margin: 6px 16px 4px 0;
+}
+
+/* Real star positions, see src/pages/sky.svg.ts */
+.sky {
+  position: fixed;
+  z-index: -30;
+  left: 50%;
+  top: 50%;
+  width: 150vmax;
+  height: 150vmax;
+  translate: -50% -50%;
+  background: url("/sky.svg") center / 100% 100% no-repeat;
+  pointer-events: none;
+  animation: reveal 1618ms ease-out both;
+}
+
+/* The sky turns around the pole, far slower than the real one would be seen */
+@media (prefers-reduced-motion: no-preference) and (min-width: 900px) {
+  .sky {
+    animation:
+      reveal 1618ms ease-out both,
+      sky-turn 1800s linear infinite;
+  }
 }
 
 .hero {
@@ -150,6 +183,14 @@ h2:not(.lead) {
   .lead span {
     animation: reveal 500ms ease-out 400ms both;
   }
+}
+
+.colophon {
+  margin-top: 5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--footnotes-border-color);
+  font-size: 0.8rem;
+  color: var(--footnotes-border-color);
 }
 
 .projects img {
