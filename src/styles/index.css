@@ -246,3 +246,80 @@ h2:not(.lead) {
     0 0 0.3em var(--body-bg-color),
     0 0 0.6em var(--body-bg-color);
 }
+
+/* On paper the page becomes a plain typeset sheet: no sky, dark ink on white */
+@media print {
+  @page {
+    margin: 2cm;
+  }
+
+  body.latex-dark {
+    --body-bg-color: white;
+    --body-color: #111;
+    --footnotes-border-color: #555;
+    --accent: #111;
+    max-width: none;
+    padding: 0;
+    font-size: 11pt;
+  }
+
+  .sky,
+  .circle,
+  footer,
+  .colophon,
+  .operator ~ *,
+  h3::before {
+    display: none !important;
+  }
+
+  .hero {
+    padding-block: 0 1.5rem;
+  }
+
+  .signature path {
+    fill: #111;
+    stroke: none;
+  }
+
+  .lead {
+    color: #333;
+    text-shadow: none;
+  }
+
+  main {
+    background: none;
+    box-shadow: none;
+  }
+
+  h2:not(.lead),
+  h3 {
+    color: #000;
+  }
+
+  h2:not(.lead) {
+    margin-top: 2rem;
+    clear: both;
+  }
+
+  body.latex-dark main a:visited {
+    color: inherit;
+  }
+
+  /* A printed link is only useful with its address */
+  main a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    font-weight: normal;
+    color: #555;
+    word-break: break-all;
+  }
+
+  .hero *,
+  .reveal {
+    animation: none !important;
+  }
+
+  .projects > div {
+    break-inside: avoid;
+  }
+}
