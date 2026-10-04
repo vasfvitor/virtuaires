@@ -28,21 +28,19 @@ h2:not(.lead) {
 /* Clears the Moon, which hangs below the hero */
 .about-me {
   margin-top: 4rem;
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
 }
 
 .about-me p {
   margin: 0;
 }
 
+/* The portrait, toned to sit with the night palette */
 .pfp {
-  flex: none;
+  margin-top: 1.25rem;
   border-radius: 6px;
-  width: 72px;
-  height: 72px;
-  margin-top: 8px;
+  width: 96px;
+  height: 96px;
+  filter: grayscale(1) sepia(0.5) hue-rotate(175deg) saturate(1.6);
 }
 
 /* Real star positions, see src/pages/sky.svg.ts */
