@@ -3,9 +3,39 @@ import BaseLayout from "@components/Layout/BaseLayout.astro";
 import { SITE_TITLE } from "~/consts";
 import milkyWay from "../data/milkyway.json";
 import stars from "../data/stars.json";
-import { moonLabel, moonPhase, skyAngle, tonight, type Star } from "../lib/sky";
+import {
+  moonLabel,
+  moonPhase,
+  skyAngle,
+  skyFacts,
+  type Star,
+} from "../lib/sky";
 
 const now = new Date();
+
+/** What the page states about the sky right now, under two headings */
+const facts = skyFacts(now, stars as Star[]);
+const FACTS = [
+  [
+    "The Moon today",
+    [
+      ["phase", "Phase"],
+      ["lit", "Illuminated"],
+      ["age", "Age"],
+      ["newMoon", "Next new Moon"],
+      ["fullMoon", "Next full Moon"],
+    ],
+  ],
+  [
+    "Tonight from Brasília",
+    [
+      ["sun", "Sun"],
+      ["stars", "Stars above the horizon"],
+      ["named", "Named stars up"],
+      ["next", "Next to cross the meridian"],
+    ],
+  ],
+] as const;
 
 const DESCRIPTION =
   "The southern sky right now, on Brasília time, played as music. The stars that cross the meridian ring, sing and keep the beat, from the Hipparcos catalogue, and the Moon's phase picks the scale.";
@@ -122,6 +152,13 @@ const glow = (() => {
   description={DESCRIPTION}
   fonts={["STIXTwoText-regular", "STIXTwoText-italic"]}
 >
+  <link
+    slot="head"
+    rel="alternate"
+    type="application/json"
+    href="/sky.json"
+    title="The sky right now"
+  />
   <script
     is:inline
     slot="head"
@@ -223,8 +260,22 @@ const glow = (() => {
         {stars.length.toLocaleString("en")} stars down to magnitude 6,
         everything south of declination +40°.
       </p>
-      <h2>Tonight</h2>
-      <p class="tonight">{tonight(now, stars as Star[])}</p>
+      {FACTS.map(([heading, rows]) => (
+        <>
+          <h2>{heading}</h2>
+          <dl>
+            {rows.map(([key, label]) => (
+              <div>
+                <dt>{label}</dt>
+                <dd data-fact={key}>{facts[key]}</dd>
+              </div>
+            ))}
+          </dl>
+        </>
+      ))}
+      <p>
+        As of <span data-fact="asOf">{facts.asOf}</span>.
+      </p>
     </section>
   </main>
 </BaseLayout>
@@ -308,6 +359,21 @@ const glow = (() => {
 
   .notes p {
     margin-top: 0.4rem;
+  }
+
+  .notes dl {
+    margin: 0.4rem 0 0;
+  }
+
+  .notes dl div {
+    display: grid;
+    grid-template-columns: 11rem 1fr;
+    gap: 0.75rem;
+  }
+
+  .notes dd {
+    margin: 0;
+    color: var(--text);
   }
 
   .readout {
@@ -406,7 +472,7 @@ const glow = (() => {
     moonLabel,
     moonPhase,
     siderealTime,
-    tonight,
+    skyFacts,
     wrap,
     type Star,
   } from "../lib/sky";
@@ -492,7 +558,10 @@ const glow = (() => {
   const today = () => {
     const date = new Date();
     document.querySelector(".phase")!.textContent = moonLabel(moonPhase(date));
-    document.querySelector(".tonight")!.textContent = tonight(date, stars);
+    const facts = skyFacts(date, stars);
+    for (const fact of document.querySelectorAll<HTMLElement>("[data-fact]")) {
+      fact.textContent = facts[fact.dataset.fact as keyof typeof facts];
+    }
   };
   today();
   setInterval(today, 60_000);

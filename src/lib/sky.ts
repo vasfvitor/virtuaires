@@ -32,6 +32,9 @@ export const colorClass = (bv: number | null) =>
 /** A number brought into 0 to `size`, as angles are into a full turn */
 export const wrap = (n: number, size = 360) => ((n % size) + size) % size;
 
+/** Days from one new Moon to the next */
+const SYNODIC = 29.530588853;
+
 const julianDate = (date: Date) => date.getTime() / 86_400_000 + 2440587.5;
 
 /** Local sidereal time in degrees: the right ascension on the meridian */
@@ -44,10 +47,22 @@ export const siderealTime = (date: Date) => {
 export const skyAngle = (date: Date) =>
   wrap(siderealTime(date) - UP).toFixed(2);
 
-/** Mean age of the Moon as a fraction of the lunar month: 0 is new, 0.5 is full */
+/** The new Moons either side of a moment */
+const lunation = (date: Date) => {
+  const day = 86_400_000;
+  // A day on from each new Moon found, so the search moves past it
+  const after = (when: Date) =>
+    nextPhase(new Date(when.getTime() + day), false);
+  let last = after(new Date(date.getTime() - 32 * day));
+  let next = after(last);
+  while (next <= date) [last, next] = [next, after(next)];
+  return { last, next };
+};
+
+/** Age of the Moon as a fraction of its month, from the true new Moons either side: 0 is new, 0.5 is about full */
 export const moonPhase = (date: Date) => {
-  const lunations = (julianDate(date) - 2451550.1) / 29.530588853;
-  return lunations - Math.floor(lunations);
+  const { last, next } = lunation(date);
+  return (date.getTime() - last.getTime()) / (next.getTime() - last.getTime());
 };
 
 /** Where the terminator crosses the disc's equator: 1 at new Moon, -1 at full */
@@ -72,8 +87,8 @@ export const litPath = (phase: number) => {
 export const moonIcon = (phase: number) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-16 -16 32 32"><circle r="16" fill="${GROUND}"/><circle r="12.5" fill="#dfe9f8" fill-opacity=".13"/><path fill="#e6eefb" transform="scale(12.5)" d="${litPath(phase)}"/></svg>`;
 
-/** The phase in words with the lit share of the disc, e.g. "Waning crescent, 39% lit" */
-export const moonLabel = (phase: number) => {
+/** The phase's name, e.g. "Waning crescent" */
+export const moonName = (phase: number) => {
   const names = [
     [0.03, "New Moon"],
     [0.22, "Waxing crescent"],
@@ -85,10 +100,12 @@ export const moonLabel = (phase: number) => {
     [0.97, "Waning crescent"],
     [1, "New Moon"],
   ] as const;
-  const name = names.find(([limit]) => phase <= limit)![1];
-  const lit = Math.round(litShare(phase) * 100);
-  return `${name}, ${lit}% lit`;
+  return names.find(([limit]) => phase <= limit)![1];
 };
+
+/** The phase in words with the lit share of the disc, e.g. "Waning crescent, 39% lit" */
+export const moonLabel = (phase: number) =>
+  `${moonName(phase)}, ${Math.round(litShare(phase) * 100)}% lit`;
 
 /** The stars with a name of their own, brightest first: right ascension, declination, name */
 export const NAMED: [ra: number, dec: number, name: string][] = [
@@ -138,29 +155,124 @@ const altitude = (ra: number, dec: number, date: Date) => {
   );
 };
 
-/** The sky at a moment, in a few sentences: the Moon, the stars that are up, and the next named star to cross the meridian */
-export const tonight = (date: Date, catalogue: Star[]) => {
+/** Brasília time, in hours from UTC */
+const ZONE = -3;
+/** Brasília's own longitude, for the Sun */
+const CITY = -47.9;
+
+/** Sunset on a day in Brasília and the sunrise after it, by the sunrise equation */
+const sunTimes = (date: Date) => {
+  const rad = Math.PI / 180;
+  const local = new Date(date.getTime() + ZONE * 3_600_000);
+  const midnight = Date.UTC(
+    local.getUTCFullYear(),
+    local.getUTCMonth(),
+    local.getUTCDate(),
+  );
+  const at = (days: number) => {
+    const n = julianDate(new Date(midnight)) + 0.5 - 2451545 + days;
+    const noon = n - CITY / 360;
+    const anomaly = wrap(357.5291 + 0.98560028 * noon);
+    const m = anomaly * rad;
+    const centre =
+      1.9148 * Math.sin(m) + 0.02 * Math.sin(2 * m) + 0.0003 * Math.sin(3 * m);
+    const longitude = wrap(anomaly + centre + 282.9372) * rad;
+    const transit =
+      2451545 + noon + 0.0053 * Math.sin(m) - 0.0069 * Math.sin(2 * longitude);
+    const declination = Math.asin(
+      Math.sin(longitude) * Math.sin(23.4397 * rad),
+    );
+    const lat = LATITUDE * rad;
+    const half =
+      Math.acos(
+        (Math.sin(-0.833 * rad) - Math.sin(lat) * Math.sin(declination)) /
+          (Math.cos(lat) * Math.cos(declination)),
+      ) / rad;
+    const toDate = (jd: number) => new Date((jd - 2440587.5) * 86_400_000);
+    return {
+      rise: toDate(transit - half / 360),
+      set: toDate(transit + half / 360),
+    };
+  };
+  return { sunset: at(0).set, sunrise: at(1).rise };
+};
+
+/**
+ * The next new or full Moon after a moment, from the true phase with its
+ * main periodic terms (Meeus, Astronomical Algorithms, ch. 49): within a few
+ * minutes, against a day for the mean motion alone
+ */
+const nextPhase = (date: Date, full: boolean) => {
+  const rad = Math.PI / 180;
+  const now = julianDate(date);
+  let k = Math.floor((now - 2451550.09766) / SYNODIC) - 1 + (full ? 0.5 : 0);
+  for (; ; k++) {
+    const t = k / 1236.85;
+    const e = 1 - 0.002516 * t - 0.0000074 * t * t;
+    const sun = (2.5534 + 29.1053567 * k) * rad;
+    const moon = (201.5643 + 385.81693528 * k + 0.0107582 * t * t) * rad;
+    const node = (160.7108 + 390.67050284 * k - 0.0016118 * t * t) * rad;
+    const omega = (124.7746 - 1.56375588 * k) * rad;
+    const terms =
+      (full ? -0.40614 : -0.4072) * Math.sin(moon) +
+      (full ? 0.17302 : 0.17241) * e * Math.sin(sun) +
+      (full ? 0.01614 : 0.01608) * Math.sin(2 * moon) +
+      (full ? 0.01043 : 0.01039) * Math.sin(2 * node) +
+      (full ? 0.00734 : 0.00739) * e * Math.sin(moon - sun) -
+      (full ? 0.00515 : 0.00514) * e * Math.sin(moon + sun) +
+      (full ? 0.00209 : 0.00208) * e * e * Math.sin(2 * sun) -
+      0.00111 * Math.sin(moon - 2 * node) -
+      0.00057 * Math.sin(moon + 2 * node) +
+      0.00056 * e * Math.sin(2 * moon + sun) -
+      0.00042 * Math.sin(3 * moon) +
+      0.00042 * e * Math.sin(sun + 2 * node) +
+      0.00038 * e * Math.sin(sun - 2 * node) -
+      0.00024 * e * Math.sin(2 * moon - sun) -
+      0.00017 * Math.sin(omega);
+    const jd = 2451550.09766 + SYNODIC * k + 0.00015437 * t * t + terms;
+    if (jd > now) return new Date((jd - 2440587.5) * 86_400_000);
+  }
+};
+
+/** The facts the sky page lists, by key, as of a moment */
+export const skyFacts = (date: Date, catalogue: Star[]) => {
+  const zone = "America/Sao_Paulo";
+  const time = (when: Date) =>
+    when.toLocaleTimeString("en-GB", {
+      timeZone: zone,
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  const day = (when: Date) =>
+    when.toLocaleDateString("en-GB", {
+      timeZone: zone,
+      day: "numeric",
+      month: "long",
+    });
+
+  const phase = moonPhase(date);
+  const age = (date.getTime() - lunation(date).last.getTime()) / 86_400_000;
   const up = (ra: number, dec: number) => altitude(ra, dec, date) > 0;
-  const count = catalogue.filter(([ra, dec]) => up(ra, dec)).length;
-  const bright = NAMED.filter(([ra, dec]) => up(ra, dec))
-    .map(([, , name]) => name)
-    .slice(0, 6);
+  const named = NAMED.filter(([ra, dec]) => up(ra, dec)).map(
+    ([, , name]) => name,
+  );
   const now = siderealTime(date);
   const [ra, , next] = NAMED.reduce((best, star) =>
     wrap(star[0] - now) < wrap(best[0] - now) ? star : best,
   );
   const minutes = Math.round((wrap(ra - now) / TURN) * 1440);
-  const wait =
-    minutes < 60
-      ? `${minutes} min`
-      : `${Math.floor(minutes / 60)} h ${minutes % 60} min`;
-  const among = bright.length
-    ? `, among them ${bright.slice(0, -1).join(", ")}${bright.length > 1 ? " and " : ""}${bright.at(-1)}`
-    : "";
-  const moon = moonLabel(moonPhase(date));
-  return [
-    `Moon phase: ${moon[0].toLowerCase()}${moon.slice(1)}.`,
-    `Above the horizon from Brasília: ${count.toLocaleString("en")} of these stars${among}.`,
-    `Next named star to cross the meridian: ${next}, in ${wait}.`,
-  ].join(" ");
+  const { sunset, sunrise } = sunTimes(date);
+
+  return {
+    phase: moonName(phase),
+    lit: `${Math.round(litShare(phase) * 100)}%`,
+    age: `${age.toFixed(1)} days`,
+    newMoon: day(nextPhase(date, false)),
+    fullMoon: day(nextPhase(date, true)),
+    sun: `sets ${time(sunset)}, rises ${time(sunrise)}`,
+    stars: `${catalogue.filter(([ra, dec]) => up(ra, dec)).length.toLocaleString("en")} of ${catalogue.length.toLocaleString("en")}`,
+    named: named.length ? named.join(", ") : "none",
+    next: `${next}, in ${minutes < 60 ? "" : `${Math.floor(minutes / 60)} h `}${minutes % 60} min`,
+    asOf: `${date.toLocaleDateString("en-GB", { timeZone: zone, day: "numeric", month: "long", year: "numeric" })}, ${time(date)} Brasília time`,
+  };
 };
