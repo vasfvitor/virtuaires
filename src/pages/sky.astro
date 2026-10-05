@@ -15,7 +15,9 @@ const KNOBS = [
   ["shimmer", "Overtone", 0, 1, 0.01, 0.25],
   ["contrast", "Faint stars", 0, 1, 0.01, 0.35],
   ["bright", "Bright stars", 0, 1, 0.01, 0.6],
-  ["pace", "Pace, °/s", 0, 0.6, 0.005, 0.2],
+  ["pace", "Pace, °/s", 0, 3, 0.01, 0.2],
+  // 180° less the golden angle
+  ["line", "Second line, °", 10, 90, 0.5, 42.5],
 ] as const;
 /** Starting points for the controls: each one only lists what it changes */
 const PRESETS = {
@@ -323,9 +325,9 @@ const SCALES = [
    * stars reach a little later, where they sound again more quietly.
    * Each is so many degrees west of the meridian
    */
-  const LINES = [
+  const lines = () => [
     { west: 0, gain: 1 },
-    { west: 35, gain: 0.55 },
+    { west: knob("line"), gain: 0.55 },
   ];
   /** Where a point so many degrees from the pole along a line falls on screen */
   const along = (west: number, distance: number) => {
@@ -531,6 +533,8 @@ const SCALES = [
   let listening = false;
   /** When the last note was played */
   let sounded = 0;
+  /** Where the second line stood at the last frame */
+  let second = knob("line");
   let last = performance.now();
 
   const frame = (now: number) => {
@@ -542,10 +546,16 @@ const SCALES = [
     speed = rest + (speed - rest) * Math.exp(-elapsed / 1.5);
     chart.style.rotate = `${(time - UP).toFixed(3)}deg`;
 
+    const LINES = lines();
+    // A line that was just moved would sweep up every star in between
+    const moved = LINES[1].west !== second;
+    second = LINES[1].west;
     const heard = LINES.map(({ west }) =>
-      crossed(seen - west, time - west, span(west) - 90).sort(
-        (a, b) => a[2] - b[2],
-      ),
+      west && moved
+        ? []
+        : crossed(seen - west, time - west, span(west) - 90).sort(
+            (a, b) => a[2] - b[2],
+          ),
     );
     const notes = heard[0];
     seen = time;
@@ -587,7 +597,7 @@ const SCALES = [
     pen.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
     pen.lineWidth = 1;
     pen.strokeStyle = "rgba(157,180,255,.3)";
-    for (const { west, gain } of LINES) {
+    for (const { west, gain } of lines()) {
       const end = along(west, span(west));
       pen.globalAlpha = gain;
       pen.beginPath();
