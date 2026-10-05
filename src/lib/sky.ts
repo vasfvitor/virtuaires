@@ -142,10 +142,13 @@ export const NAMED: [ra: number, dec: number, name: string][] = [
   [183.79, -58.75, "Imai"],
 ];
 
+/** Sidereal time on Brasília's own meridian, about three degrees west of the one its clocks keep */
+const cityTime = (date: Date) => siderealTime(date) + CITY - LONGITUDE;
+
 /** A star's height above the horizon at Brasília, in degrees */
 const altitude = (ra: number, dec: number, date: Date) => {
   const rad = Math.PI / 180;
-  const hour = (siderealTime(date) - ra) * rad;
+  const hour = (cityTime(date) - ra) * rad;
   const [lat, d] = [LATITUDE * rad, dec * rad];
   return (
     Math.asin(
@@ -256,7 +259,7 @@ export const skyFacts = (date: Date, catalogue: Star[]) => {
   const named = NAMED.filter(([ra, dec]) => up(ra, dec)).map(
     ([, , name]) => name,
   );
-  const now = siderealTime(date);
+  const now = cityTime(date);
   const [ra, , next] = NAMED.reduce((best, star) =>
     wrap(star[0] - now) < wrap(best[0] - now) ? star : best,
   );

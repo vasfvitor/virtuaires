@@ -266,7 +266,8 @@ const glow = (() => {
           </dl>
         </>
       ))}
-      <p>
+      <!-- For readers that do not run the script below, which keeps all of this current -->
+      <p class="as-of">
         As of <span data-fact="asOf">{facts.asOf}</span>.
       </p>
     </section>
@@ -557,6 +558,7 @@ const glow = (() => {
     }
   };
   today();
+  document.querySelector<HTMLElement>(".as-of")!.hidden = true;
   setInterval(today, 60_000);
   const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
   /** How much of the Milky Way lies on the meridian at every other degree, 0 to 1 */
@@ -1393,7 +1395,12 @@ const glow = (() => {
     pen.globalAlpha = 1;
   };
 
-  let time = siderealTime(new Date());
+  /** The real sky's sidereal time, counted on without wrapping from when the page opened */
+  const opened = { time: siderealTime(new Date()), at: Date.now() };
+  const realTime = () => opened.time + ((Date.now() - opened.at) / 1000) * REAL;
+  /** How far listening has run the page's sky ahead of the real one */
+  let ahead = 0;
+  let time = opened.time;
   let speed = REAL;
   let listening = false;
   /** The last step of the grid sent to the audio clock, a little ahead of the sky */
@@ -1409,7 +1416,13 @@ const glow = (() => {
   const frame = (now: number) => {
     const elapsed = Math.min(0.1, (now - last) / 1000);
     last = now;
-    time += speed * elapsed;
+    if (listening) {
+      time += speed * elapsed;
+      ahead = time - realTime();
+    } else {
+      // Silent, it keeps to the clock, even after a while in a background tab
+      time = realTime() + ahead;
+    }
     // The sky keeps its real pace until someone listens: then a beat is a sidereal minute
     const rest = listening ? (knob("tempo") / 60) * BEAT : REAL;
     speed = rest + (speed - rest) * Math.exp(-elapsed / 1.5);
