@@ -110,7 +110,7 @@ const glow = (() => {
       Listen
     </button>
     <p class="readout">
-      {moonLabel(moonPhase(now))}
+      <span class="phase">{moonLabel(moonPhase(now))}</span>
       <br />
       <span class="star">&nbsp;</span>
     </p>
@@ -331,6 +331,7 @@ const glow = (() => {
     UP,
     colorClass,
     litShare,
+    moonLabel,
     moonPhase,
     siderealTime,
     wrap,
@@ -447,6 +448,10 @@ const glow = (() => {
   const pen = canvas.getContext("2d")!;
   const button = document.querySelector<HTMLButtonElement>("main > button")!;
   const readout = document.querySelector<HTMLElement>(".star")!;
+  // The page was built on another day: the Moon is brought up to date
+  document.querySelector(".phase")!.textContent = moonLabel(
+    moonPhase(new Date()),
+  );
   const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
   /** How much of the Milky Way lies on the meridian at every other degree, 0 to 1 */
   const glow: number[] = JSON.parse(canvas.dataset.glow!);
@@ -751,9 +756,11 @@ const glow = (() => {
     bus.connect(limiter);
     bus.connect(delay).connect(damp).connect(again).connect(delay);
     damp.connect(wet).connect(limiter);
-    limiter.connect(audio.destination);
+    // Volume comes last, so it reaches the bass too
+    const master = audio.createGain();
+    limiter.connect(master).connect(audio.destination);
     dials = {
-      volume: bus.gain,
+      volume: master.gain,
       echo: wet.gain,
       repeats: again.gain,
       tone: damp.frequency,
