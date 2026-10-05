@@ -1,0 +1,14 @@
+# Cloudflare Pages response headers.
+# Built scripts and images carry a hash in their name, so they never change
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# The fonts keep their names, so they are kept for a month, then checked
+/fonts/*
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+
+# Generated on each build, without a hash
+/sky.svg
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/star.svg
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
