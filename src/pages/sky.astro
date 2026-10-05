@@ -53,7 +53,6 @@ const SCALES = [
   <canvas aria-hidden="true"></canvas>
   <main>
     <h1>The southern sky, played</h1>
-    <p>Each star that crosses a line plays a note.</p>
     <button type="button" aria-pressed="false">
       Listen
     </button>
@@ -438,6 +437,8 @@ const SCALES = [
 
   /** Faintest magnitude that still plays a full note; the rest are a patter of ticks */
   const CLEAR = 3.5;
+  /** Faintest magnitude that always plays its note, however busy the sky */
+  const BOLD = 2.6;
   /** Seconds between full notes: a faster sky turns the surplus into ticks */
   const BREATH = 0.16;
   let noted = 0;
@@ -449,7 +450,9 @@ const SCALES = [
     const at = audio.currentTime;
     // Three ranks: the named stars are bells, the clear ones notes, the rest ticks
     const named = names.has(star);
-    const clear = !named && mag <= CLEAR && at - noted >= BREATH;
+    // The brightest of the clear ones never give way to the budget
+    const clear =
+      !named && (mag <= BOLD || (mag <= CLEAR && at - noted >= BREATH));
     if (clear) noted = at;
     if (!named && !clear) {
       if (at - ticked < 0.04) return;
@@ -579,8 +582,6 @@ const SCALES = [
   let seen = time;
   let speed = REAL;
   let listening = false;
-  /** When the last note was played */
-  let sounded = 0;
   /** Where the second line stood at the last frame */
   let second = knob("line");
   let last = performance.now();
@@ -607,13 +608,10 @@ const SCALES = [
     );
     const notes = heard[0];
     seen = time;
-    // A fast spin would pile up hundreds of notes a second: keep the brightest
-    if (heard.some((line) => line.length) && now - sounded > 35) {
-      heard.forEach((line, i) =>
-        line.slice(0, 4).forEach((star) => play(star, LINES[i].gain)),
-      );
-      sounded = now;
-    }
+    // Brightest first: play() decides which of them get a full note
+    heard.forEach((line, i) =>
+      line.slice(0, 6).forEach((star) => play(star, LINES[i].gain)),
+    );
     heard.forEach((line, i) => {
       for (const star of line.slice(0, 40)) {
         rings.push({
