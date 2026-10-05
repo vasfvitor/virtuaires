@@ -50,7 +50,7 @@ const SCALES = [
   <canvas aria-hidden="true"></canvas>
   <main>
     <h1>The southern sky, played</h1>
-    <p>Each star that crosses the line plays a note.</p>
+    <p>Each star that crosses a line plays a note.</p>
     <button type="button" aria-pressed="false">
       Listen
     </button>
@@ -318,7 +318,33 @@ const SCALES = [
   const readout = document.querySelector<HTMLElement>(".star")!;
   const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // The line runs from the pole to the top of the window
+  /**
+   * The lines the stars play on: the meridian, and a second one the same
+   * stars reach a little later, where they sound again more quietly.
+   * Each is so many degrees west of the meridian
+   */
+  const LINES = [
+    { west: 0, gain: 1 },
+    { west: 35, gain: 0.55 },
+  ];
+  /** Where a point so many degrees from the pole along a line falls on screen */
+  const along = (west: number, distance: number) => {
+    const angle = (west * Math.PI) / 180;
+    return {
+      x: pole.x + distance * perDegree * Math.sin(angle),
+      y: pole.y - distance * perDegree * Math.cos(angle),
+    };
+  };
+  /** How many degrees from the pole a line runs before it leaves the window */
+  const span = (west: number) => {
+    const angle = (west * Math.PI) / 180;
+    const side = (canvas.clientWidth - pole.x) / Math.sin(angle);
+    return (
+      Math.min(pole.y / Math.cos(angle), west ? side : Infinity) / perDegree
+    );
+  };
+
+  // The lines run from the pole to the edge of the window
   let pole = { x: 0, y: 0 };
   let perDegree = 1;
   const measure = () => {
@@ -384,7 +410,7 @@ const SCALES = [
     tune();
   });
 
-  const play = (star: Star) => {
+  const play = (star: Star, gain: number) => {
     const [, dec, mag, bv] = star;
     if (!audio || audio.state !== "running") return;
     const height = (90 + dec) / reach();
@@ -409,6 +435,7 @@ const SCALES = [
       Math.max(named ? 0.35 : 0, Math.min(0.9, 0.5 * faint)) * (1 - height / 2);
     const length = (0.8 + 4 * level) * knob("length") * (named ? 2 : 1);
     const at = audio.currentTime;
+    const loud = level * gain;
 
     const tone = (frequency: number, peak: number, ends: number) => {
       if (peak < 0.0005) return;
@@ -423,12 +450,12 @@ const SCALES = [
       voice.start(at);
       voice.stop(at + ends + 0.05);
     };
-    tone(pitch, level, length);
+    tone(pitch, loud, length);
     if (!warm) {
-      tone(pitch * (hot ? 3 : 2), level * knob("shimmer"), length * 0.4);
+      tone(pitch * (hot ? 3 : 2), loud * knob("shimmer"), length * 0.4);
     }
     if (named) {
-      const bell = level * knob("bright");
+      const bell = loud * knob("bright");
       tone(pitch / 2, bell, length);
       tone(pitch * 2, bell * 0.5, length * 0.7);
       tone(pitch * 3, bell * 0.3, length * 0.5);
@@ -438,6 +465,7 @@ const SCALES = [
 
   // Each note leaves a ring where its star crossed
   type Ring = {
+    x: number;
     y: number;
     born: number;
     size: number;
@@ -467,11 +495,10 @@ const SCALES = [
     return `${dec < 0 ? "−" : "+"}${Math.floor(minutes / 60)}° ${String(minutes % 60).padStart(2, "0")}′`;
   };
 
-  /** The stars whose right ascension lies between two sidereal times, on the visible line */
-  const crossed = (from: number, to: number) => {
+  /** The stars whose right ascension lies between two sidereal times, up to a declination */
+  const crossed = (from: number, to: number, limit: number) => {
     const [low, high] = from < to ? [from, to] : [to, from];
     if (high - low >= 360) return [];
-    const limit = reach() - 90;
     const found: Star[] = [];
     const wrap = (n: number) => ((n % 360) + 360) % 360;
     const [a, b] = [wrap(low), wrap(high)];
@@ -515,22 +542,31 @@ const SCALES = [
     speed = rest + (speed - rest) * Math.exp(-elapsed / 1.5);
     chart.style.rotate = `${(time - UP).toFixed(3)}deg`;
 
-    const notes = crossed(seen, time).sort((a, b) => a[2] - b[2]);
+    const heard = LINES.map(({ west }) =>
+      crossed(seen - west, time - west, span(west) - 90).sort(
+        (a, b) => a[2] - b[2],
+      ),
+    );
+    const notes = heard[0];
     seen = time;
     // A fast spin would pile up hundreds of notes a second: keep the brightest
-    if (notes.length && now - sounded > 35) {
-      notes.slice(0, 3).forEach(play);
+    if (heard.some((line) => line.length) && now - sounded > 35) {
+      heard.forEach((line, i) =>
+        line.slice(0, 3).forEach((star) => play(star, LINES[i].gain)),
+      );
       sounded = now;
     }
-    for (const star of notes.slice(0, 40)) {
-      rings.push({
-        y: pole.y - (90 + star[1]) * perDegree,
-        born: now,
-        size: names.has(star) ? 46 : Math.max(3, 16 - star[2] * 2.2),
-        color: tint(star[3]),
-        named: names.has(star),
-      });
-    }
+    heard.forEach((line, i) => {
+      for (const star of line.slice(0, 40)) {
+        rings.push({
+          ...along(LINES[i].west, 90 + star[1]),
+          born: now,
+          size: names.has(star) ? 46 : Math.max(3, 16 - star[2] * 2.2),
+          color: tint(star[3]),
+          named: names.has(star),
+        });
+      }
+    });
     for (const star of notes) {
       const name = names.get(star);
       const y = pole.y - (90 + star[1]) * perDegree;
@@ -551,10 +587,15 @@ const SCALES = [
     pen.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
     pen.lineWidth = 1;
     pen.strokeStyle = "rgba(157,180,255,.3)";
-    pen.beginPath();
-    pen.moveTo(pole.x, pole.y);
-    pen.lineTo(pole.x, 0);
-    pen.stroke();
+    for (const { west, gain } of LINES) {
+      const end = along(west, span(west));
+      pen.globalAlpha = gain;
+      pen.beginPath();
+      pen.moveTo(pole.x, pole.y);
+      pen.lineTo(end.x, end.y);
+      pen.stroke();
+    }
+    pen.globalAlpha = 1;
     labels = labels.filter((label) => time - label.crossed < TRAIL);
     pen.font = 'italic 15px "STIX Two Text", serif';
     for (const label of labels) {
@@ -581,7 +622,7 @@ const SCALES = [
       pen.strokeStyle = `rgba(${ring.color},${(0.7 * (1 - age) ** 2).toFixed(3)})`;
       pen.beginPath();
       pen.arc(
-        pole.x,
+        ring.x,
         ring.y,
         1.5 + ring.size * (calm ? 0.4 : age ** 0.5),
         0,
