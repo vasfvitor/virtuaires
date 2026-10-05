@@ -1,5 +1,8 @@
 ---
 import { GITHUB_URL, LINKEDIN_URL, ROLE, SITE_TITLE } from "~/consts";
+
+/** Every other page links back to this one */
+const home = Astro.url.pathname === "/";
 ---
 
 <footer>
@@ -34,7 +37,7 @@ import { GITHUB_URL, LINKEDIN_URL, ROLE, SITE_TITLE } from "~/consts";
     </a>
   </div>
   <p class="who">
-    {SITE_TITLE}, {ROLE}
+    {home ? SITE_TITLE : <a href="/">{SITE_TITLE}</a>}, {ROLE}
     <br />
     Background data: Hipparcos catalogue, via{" "}
     <a href="https://github.com/ofrohn/d3-celestial">d3-celestial</a>

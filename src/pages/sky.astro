@@ -47,7 +47,7 @@ const SCALES = [
 ---
 
 <BaseLayout
-  title="The southern sky, played"
+  title="The southern sky"
   description="The southern sky as a music box: every star that crosses the meridian plays a note, from real star positions."
   fonts={["STIXTwoText-regular", "STIXTwoText-italic"]}
   noindex
@@ -59,7 +59,7 @@ const SCALES = [
   ></div>
   <canvas class="stage" aria-hidden="true"></canvas>
   <main>
-    <h1>The southern sky, played</h1>
+    <h1>The southern sky</h1>
     <button type="button" aria-pressed="false">
       Listen
     </button>
@@ -128,9 +128,6 @@ const SCALES = [
         </label>
       </div>
     </details>
-    <p class="home">
-      <a href="/">Vitor Ayres</a>
-    </p>
   </main>
 </BaseLayout>
 
@@ -275,11 +272,6 @@ const SCALES = [
   output {
     font-variant-numeric: tabular-nums;
     text-align: right;
-  }
-
-  .home {
-    font-size: 0.8rem;
-    font-style: normal;
   }
 </style>
 
@@ -721,6 +713,9 @@ const SCALES = [
     voice.stop(at + 0.55);
   };
 
+  /** The bass's colour, on the sky and in its strip */
+  const BASS = "102,199,255";
+
   // Each note leaves a ring where its star crossed
   type Ring = {
     x: number;
@@ -768,6 +763,16 @@ const SCALES = [
     const interval = bassAt(index);
     for (const hit of hits) sound(hit, at);
     if (interval !== null) pluck(interval, index * GRID, at);
+    // The bass has no star of its own: it sounds from the pole the sky turns about
+    if (interval !== null) {
+      rings.push({
+        ...pole,
+        born,
+        size: 22 + interval * 2.5,
+        color: BASS,
+        named: false,
+      });
+    }
 
     const LINES = lines();
     for (const { star, line, rank } of hits) {
@@ -804,7 +809,7 @@ const SCALES = [
     bells: "232,239,251",
     stars: "255,246,224",
     dust: "157,180,255",
-    bass: "102,199,255",
+    bass: BASS,
   };
 
   const drawRolls = () => {
