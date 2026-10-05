@@ -12,10 +12,11 @@ interface Props {
   noindex?: boolean;
   /** Open Graph type: the home page is a profile */
   type?: "website" | "profile";
+  /** The picture shown when the page is shared, 1200 by 630, and its description */
+  image?: { src: string; alt: string };
 }
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
-const image = new URL("/og.jpg", Astro.url);
 
 const {
   title,
@@ -23,8 +24,13 @@ const {
   fonts = ["STIXTwoText-regular", "STIXTwoText-bold"],
   noindex = false,
   type = "website",
+  image: picture = {
+    src: "/og.jpg",
+    alt: "A total solar eclipse over a field of stars",
+  },
 } = Astro.props;
-const imageAlt = "A total solar eclipse over a field of stars";
+const image = new URL(picture.src, Astro.url);
+const imageAlt = picture.alt;
 ---
 
 <!-- Global Metadata -->
