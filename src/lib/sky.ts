@@ -4,6 +4,8 @@ import { GROUND } from "../consts";
 
 /** Longitude of the UTC-3 meridian, the one Brasília time is based on */
 const LONGITUDE = -45;
+/** Latitude of Brasília, where the horizon is reckoned from */
+const LATITUDE = -15.8;
 /** Right ascension drawn straight up from the pole in sky.svg: the Southern Cross */
 export const UP = 187;
 
@@ -86,4 +88,79 @@ export const moonLabel = (phase: number) => {
   const name = names.find(([limit]) => phase <= limit)![1];
   const lit = Math.round(litShare(phase) * 100);
   return `${name}, ${lit}% lit`;
+};
+
+/** The stars with a name of their own, brightest first: right ascension, declination, name */
+export const NAMED: [ra: number, dec: number, name: string][] = [
+  [101.29, -16.72, "Sirius"],
+  [95.99, -52.7, "Canopus"],
+  [213.92, 19.18, "Arcturus"],
+  [219.9, -60.83, "Rigil Kentaurus"],
+  [219.9, -60.84, "Toliman"],
+  [279.23, 38.78, "Vega"],
+  [78.63, -8.2, "Rigel"],
+  [114.83, 5.22, "Procyon"],
+  [24.43, -57.24, "Achernar"],
+  [88.79, 7.41, "Betelgeuse"],
+  [210.96, -60.37, "Hadar"],
+  [297.7, 8.87, "Altair"],
+  [186.65, -63.1, "Acrux"],
+  [68.98, 16.51, "Aldebaran"],
+  [201.3, -11.16, "Spica"],
+  [247.35, -26.43, "Antares"],
+  [116.33, 28.03, "Pollux"],
+  [344.41, -29.62, "Fomalhaut"],
+  [191.93, -59.69, "Mimosa"],
+  [152.09, 11.97, "Regulus"],
+  [104.66, -28.97, "Adhara"],
+  [113.65, 31.89, "Castor"],
+  [187.79, -57.11, "Gacrux"],
+  [263.4, -37.1, "Shaula"],
+  [81.28, 6.35, "Bellatrix"],
+  [81.57, 28.61, "Elnath"],
+  [138.3, -69.72, "Miaplacidus"],
+  [84.05, -1.2, "Alnilam"],
+  [332.06, -46.96, "Alnair"],
+  [85.19, -1.94, "Alnitak"],
+  [183.79, -58.75, "Imai"],
+];
+
+/** A star's height above the horizon at Brasília, in degrees */
+const altitude = (ra: number, dec: number, date: Date) => {
+  const rad = Math.PI / 180;
+  const hour = (siderealTime(date) - ra) * rad;
+  const [lat, d] = [LATITUDE * rad, dec * rad];
+  return (
+    Math.asin(
+      Math.sin(lat) * Math.sin(d) +
+        Math.cos(lat) * Math.cos(d) * Math.cos(hour),
+    ) / rad
+  );
+};
+
+/** The sky at a moment, in a few sentences: the Moon, the stars that are up, and the next named star to cross the meridian */
+export const tonight = (date: Date, catalogue: Star[]) => {
+  const up = (ra: number, dec: number) => altitude(ra, dec, date) > 0;
+  const count = catalogue.filter(([ra, dec]) => up(ra, dec)).length;
+  const bright = NAMED.filter(([ra, dec]) => up(ra, dec))
+    .map(([, , name]) => name)
+    .slice(0, 6);
+  const now = siderealTime(date);
+  const [ra, , next] = NAMED.reduce((best, star) =>
+    wrap(star[0] - now) < wrap(best[0] - now) ? star : best,
+  );
+  const minutes = Math.round((wrap(ra - now) / TURN) * 1440);
+  const wait =
+    minutes < 60
+      ? `${minutes} min`
+      : `${Math.floor(minutes / 60)} h ${minutes % 60} min`;
+  const among = bright.length
+    ? `, among them ${bright.slice(0, -1).join(", ")}${bright.length > 1 ? " and " : ""}${bright.at(-1)}`
+    : "";
+  const moon = moonLabel(moonPhase(date));
+  return [
+    `Moon phase: ${moon[0].toLowerCase()}${moon.slice(1)}.`,
+    `Above the horizon from Brasília: ${count.toLocaleString("en")} of these stars${among}.`,
+    `Next named star to cross the meridian: ${next}, in ${wait}.`,
+  ].join(" ");
 };

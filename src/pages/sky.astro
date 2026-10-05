@@ -2,7 +2,8 @@
 import BaseLayout from "@components/Layout/BaseLayout.astro";
 import { SITE_TITLE } from "~/consts";
 import milkyWay from "../data/milkyway.json";
-import { moonLabel, moonPhase, skyAngle } from "../lib/sky";
+import stars from "../data/stars.json";
+import { moonLabel, moonPhase, skyAngle, tonight, type Star } from "../lib/sky";
 
 const now = new Date();
 
@@ -207,6 +208,24 @@ const glow = (() => {
         </label>
       </div>
     </details>
+    <section class="notes">
+      <h2>How it plays</h2>
+      <p>
+        The sky turns at the pace of the music: one beat is one sidereal minute.
+        Every star that crosses a line sounds. The 31 with a name of their own
+        ring as bells and move the chord, and the fainter ones glint on its
+        notes and keep the hi-hat. The tune is drawn from the heights of the
+        stars as each section begins, the bass opens up while the Milky Way is
+        on the meridian, and the phase of the Moon picks the scale.
+      </p>
+      <p>
+        The positions are those of the Hipparcos catalogue:{" "}
+        {stars.length.toLocaleString("en")} stars down to magnitude 6,
+        everything south of declination +40°.
+      </p>
+      <h2>Tonight</h2>
+      <p class="tonight">{tonight(now, stars as Star[])}</p>
+    </section>
   </main>
 </BaseLayout>
 
@@ -270,6 +289,25 @@ const glow = (() => {
   button:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
+  }
+
+  /* What the page is, for whoever scrolls this far */
+  .notes {
+    max-width: 30rem;
+    margin-top: 4rem;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+
+  .notes h2 {
+    margin: 1.5rem 0 0;
+    font-size: 0.9rem;
+    color: var(--text);
+  }
+
+  .notes p {
+    margin-top: 0.4rem;
   }
 
   .readout {
@@ -360,6 +398,7 @@ const glow = (() => {
   import {
     COLORS,
     LIMIT,
+    NAMED,
     TURN,
     UP,
     colorClass,
@@ -367,6 +406,7 @@ const glow = (() => {
     moonLabel,
     moonPhase,
     siderealTime,
+    tonight,
     wrap,
     type Star,
   } from "../lib/sky";
@@ -403,42 +443,8 @@ const glow = (() => {
   const BASS = "rgb(102 199 255)";
   const TUNE = COLORS[1][1];
 
-  /** The stars with a name of their own, by right ascension and declination */
-  const NAMES: [ra: number, dec: number, name: string][] = [
-    [101.29, -16.72, "Sirius"],
-    [95.99, -52.7, "Canopus"],
-    [213.92, 19.18, "Arcturus"],
-    [219.9, -60.83, "Rigil Kentaurus"],
-    [219.9, -60.84, "Toliman"],
-    [279.23, 38.78, "Vega"],
-    [78.63, -8.2, "Rigel"],
-    [114.83, 5.22, "Procyon"],
-    [24.43, -57.24, "Achernar"],
-    [88.79, 7.41, "Betelgeuse"],
-    [210.96, -60.37, "Hadar"],
-    [297.7, 8.87, "Altair"],
-    [186.65, -63.1, "Acrux"],
-    [68.98, 16.51, "Aldebaran"],
-    [201.3, -11.16, "Spica"],
-    [247.35, -26.43, "Antares"],
-    [116.33, 28.03, "Pollux"],
-    [344.41, -29.62, "Fomalhaut"],
-    [191.93, -59.69, "Mimosa"],
-    [152.09, 11.97, "Regulus"],
-    [104.66, -28.97, "Adhara"],
-    [113.65, 31.89, "Castor"],
-    [187.79, -57.11, "Gacrux"],
-    [263.4, -37.1, "Shaula"],
-    [81.28, 6.35, "Bellatrix"],
-    [81.57, 28.61, "Elnath"],
-    [138.3, -69.72, "Miaplacidus"],
-    [84.05, -1.2, "Alnilam"],
-    [332.06, -46.96, "Alnair"],
-    [85.19, -1.94, "Alnitak"],
-    [183.79, -58.75, "Imai"],
-  ];
   const names = new Map<Star, string>();
-  for (const [ra, dec, name] of NAMES) {
+  for (const [ra, dec, name] of NAMED) {
     const star = stars.find((star) => star[0] === ra && star[1] === dec);
     if (star) names.set(star, name);
   }
@@ -481,10 +487,15 @@ const glow = (() => {
   const pen = canvas.getContext("2d")!;
   const button = document.querySelector<HTMLButtonElement>("main > button")!;
   const readout = document.querySelector<HTMLElement>(".star")!;
-  // The page was built on another day: the Moon is brought up to date
-  document.querySelector(".phase")!.textContent = moonLabel(
-    moonPhase(new Date()),
-  );
+  // The page was built on another day: the Moon and tonight's sky are
+  // brought up to date, and kept so
+  const today = () => {
+    const date = new Date();
+    document.querySelector(".phase")!.textContent = moonLabel(moonPhase(date));
+    document.querySelector(".tonight")!.textContent = tonight(date, stars);
+  };
+  today();
+  setInterval(today, 60_000);
   const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
   /** How much of the Milky Way lies on the meridian at every other degree, 0 to 1 */
   const glow: number[] = JSON.parse(canvas.dataset.glow!);
