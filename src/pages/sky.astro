@@ -708,7 +708,8 @@ const glow = (() => {
   };
 
   // Harmony. The phrases go round a familiar progression, so the ear can
-  // settle into it; a bell is the surprise, moving its bar's chord to its note
+  // settle into it; a bell is the surprise, moving the chord to its note
+  // for the rest of the phrase
 
   /** Semitones above A of a degree of the scale, counting on through the octaves */
   const semitones = (degree: number) => {
@@ -765,8 +766,9 @@ const glow = (() => {
     // I V vi IV, or the same moves on a five-note scale
     const round = currentScale().length > 5 ? [0, 4, 5, 3] : [0, 3, 4, 2];
     let chord = round[barOf(step)];
-    for (let i = 0; i < BAR; i++) {
-      const bell = hitsAt(bar * BAR + i).find(
+    // A bell's chord holds from its bar to the end of the phrase
+    for (let i = (bar - barOf(step)) * BAR; i < (bar + 1) * BAR; i++) {
+      const bell = hitsAt(i).find(
         (hit) => hit.band === "bells" && !hit.line.west,
       );
       if (bell) chord = bellDegree(bell.star);
@@ -910,8 +912,6 @@ const glow = (() => {
   let audio: AudioContext | undefined;
   /** Where each instrument goes in */
   let outs: Record<Band, GainNode>;
-  /** The tune and the glints: they step back while a bell rings */
-  let under: GainNode;
   let delay: DelayNode;
   /** Half a second of hiss, for the hi-hat */
   let noise: AudioBuffer;
@@ -929,7 +929,6 @@ const glow = (() => {
     const damp = audio.createBiquadFilter();
     const again = audio.createGain();
     const wet = audio.createGain();
-    under = audio.createGain();
     outs = {
       bells: audio.createGain(),
       stars: audio.createGain(),
@@ -938,9 +937,8 @@ const glow = (() => {
       bass: audio.createGain(),
     };
     outs.bells.connect(bus);
-    outs.stars.connect(under);
-    outs.dust.connect(under);
-    under.connect(bus);
+    outs.stars.connect(bus);
+    outs.dust.connect(bus);
     // The bass and drums stay out of the echo, which would blur them
     outs.bass.connect(limiter);
     outs.drums.connect(limiter);
@@ -1028,26 +1026,25 @@ const glow = (() => {
     Math.min(0.9, 0.5 * 10 ** (-0.256 * star[2]));
 
   /** A bell: its star's own chord note, with the overtones of a struck bar */
-  const ring = ({ star, line }: Hit, at: number) => {
-    const interval = CROSS[names.get(star) ?? ""];
-    const pitch = 220 * 2 ** ((interval ?? pitchClass(bellDegree(star))) / 12);
-    const level = Math.max(0.4, loudness(star)) * line.gain;
-    const length = 3 * knob("length");
+  const ring = ({ star, line }: Hit, step: number, at: number) => {
+    // On the meridian a bell sounds its own note, the one the chord moved to;
+    // on the second line, where it moves nothing, it sounds the chord's
+    const interval = line.west ? undefined : CROSS[names.get(star) ?? ""];
+    const root = line.west ? chordAt(step) : bellDegree(star);
+    const pitch = 440 * 2 ** ((interval ?? pitchClass(root)) / 12);
+    const level = Math.max(0.3, loudness(star)) * line.gain * 0.8;
+    const length = 2.5 * knob("length");
+    // Whole-number overtones, so it rings in tune with everything else
     for (const [ratio, share, last] of [
-      [0.5, 0.6, 1],
       [1, 1, 1],
-      [2, 0.3, 0.7],
-      [3, 0.18, 0.5],
-      [4.2, 0.07, 0.25],
+      [2, 0.3, 0.6],
+      [3, 0.12, 0.4],
+      [4, 0.05, 0.25],
     ]) {
       voice("sine", pitch * ratio, at, length * last).connect(
-        strike("bells", at, level * share, 0.006, length * last),
+        strike("bells", at, level * share, 0.004, length * last),
       );
     }
-    // The rest of the sky steps back, then returns as the bell fades
-    under.gain.cancelScheduledValues(at);
-    under.gain.setTargetAtTime(0.65, at, 0.03);
-    under.gain.setTargetAtTime(1, at + 0.3, 0.5);
   };
 
   /** A glint: a short high note of the chord, chosen by how high its star crosses */
@@ -1157,7 +1154,7 @@ const glow = (() => {
   /** Sounds one step of the grid at the given time on the audio clock */
   const schedule = (step: number, at: number) => {
     for (const hit of hitsAt(step)) {
-      if (hit.band === "bells") ring(hit, at);
+      if (hit.band === "bells") ring(hit, step, at);
       else glint(hit, step, at);
     }
     const note = melodyAt(step);
