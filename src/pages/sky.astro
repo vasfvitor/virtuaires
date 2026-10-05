@@ -15,7 +15,7 @@ const KNOBS = [
   ["shimmer", "Overtone", 0, 1, 0.01, 0.25],
   ["contrast", "Faint stars", 0, 1, 0.01, 0.35],
   ["bright", "Bright stars", 0, 1, 0.01, 0.6],
-  ["pace", "Pace, °/s", 0, 0.6, 0.005, 0.12],
+  ["pace", "Pace, °/s", 0, 0.6, 0.005, 0.2],
 ] as const;
 /** Starting points for the controls: each one only lists what it changes */
 const PRESETS = {
@@ -24,7 +24,7 @@ const PRESETS = {
   Cathedral: { repeats: 0.7, gap: 0.6, tone: 1400, length: 1.6 },
   Glass: { shimmer: 0.8, tone: 6000, length: 0.6, repeats: 0.3, gap: 0.25 },
   "Bright stars only": { contrast: 0, bright: 1 },
-  Rain: { pace: 0.25, length: 0.4, contrast: 0.6, repeats: 0.25 },
+  Rain: { pace: 0.35, length: 0.4, contrast: 0.6, repeats: 0.25 },
 };
 const SCALES = [
   "Lydian",
@@ -445,8 +445,10 @@ const SCALES = [
     named: boolean;
   };
   let rings: Ring[] = [];
-  /** Names shown beside the line for a few seconds */
-  let labels: { name: string; y: number; born: number }[] = [];
+  /** How far past the line, in degrees, a star keeps its name */
+  const TRAIL = 12;
+  /** Names that follow their stars away from the line */
+  let labels: { name: string; y: number; born: number; crossed: number }[] = [];
   /** When a named star last took the readout */
   let named = -Infinity;
   const tint = (bv: number | null) =>
@@ -534,7 +536,7 @@ const SCALES = [
       const y = pole.y - (90 + star[1]) * perDegree;
       // Two names on the same spot would be unreadable: the first one stays
       if (name && !labels.some((label) => Math.abs(label.y - y) < 16)) {
-        labels.push({ name, y, born: now });
+        labels.push({ name, y, born: now, crossed: time });
       }
     }
     // A named star stays in the readout until the next one
@@ -553,13 +555,24 @@ const SCALES = [
     pen.moveTo(pole.x, pole.y);
     pen.lineTo(pole.x, 0);
     pen.stroke();
-    labels = labels.filter((label) => now - label.born < 7000);
+    labels = labels.filter((label) => time - label.crossed < TRAIL);
     pen.font = 'italic 15px "STIX Two Text", serif';
     for (const label of labels) {
-      const age = (now - label.born) / 7000;
-      const shown = Math.min(1, age * 12, (1 - age) * 3);
+      // The star has turned about the pole since it crossed
+      const turned = time - label.crossed;
+      const angle = (turned * Math.PI) / 180;
+      const distance = pole.y - label.y;
+      const shown = Math.min(
+        1,
+        (now - label.born) / 500,
+        (1 - turned / TRAIL) * 3,
+      );
       pen.fillStyle = `rgba(232,239,251,${(0.9 * shown).toFixed(3)})`;
-      pen.fillText(label.name, pole.x + 22, label.y + 5);
+      pen.fillText(
+        label.name,
+        pole.x + distance * Math.sin(angle) + 12,
+        pole.y - distance * Math.cos(angle) + 5,
+      );
     }
     rings = rings.filter((ring) => now - ring.born < 1800);
     for (const ring of rings) {
