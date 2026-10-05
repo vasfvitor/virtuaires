@@ -17,6 +17,15 @@ const KNOBS = [
   ["bright", "Bright stars", 0, 1, 0.01, 0.6],
   ["pace", "Pace, °/s", 0, 0.6, 0.005, 0.08],
 ] as const;
+/** Starting points for the controls: each one only lists what it changes */
+const PRESETS = {
+  Night: {},
+  Dry: { echo: 0, length: 0.7 },
+  Cathedral: { repeats: 0.7, gap: 0.6, tone: 1400, length: 1.6 },
+  Glass: { shimmer: 0.8, tone: 6000, length: 0.6, repeats: 0.3, gap: 0.25 },
+  "Bright stars only": { contrast: 0, bright: 1 },
+  Rain: { pace: 0.25, length: 0.4, contrast: 0.6, repeats: 0.25 },
+};
 const SCALES = [
   "Lydian",
   "Major",
@@ -53,6 +62,14 @@ const SCALES = [
     <details open>
       <summary>Sound</summary>
       <div class="knobs">
+        <label>
+          <span>Preset</span>
+          <select name="preset">
+            {Object.entries(PRESETS).map(([name, values]) => (
+              <option value={JSON.stringify(values)}>{name}</option>
+            ))}
+          </select>
+        </label>
         {KNOBS.map(([key, label, min, max, step, value]) => (
           <label>
             <span>{label}</span>
@@ -69,7 +86,6 @@ const SCALES = [
             ))}
           </select>
         </label>
-        <button type="reset">Reset</button>
       </div>
     </details>
     <p class="home">
@@ -96,7 +112,8 @@ const SCALES = [
 
   canvas {
     position: fixed;
-    z-index: -20;
+    /* Above the text, so a name is never hidden behind the controls */
+    z-index: 1;
     inset: 0;
     width: 100%;
     height: 100%;
@@ -153,7 +170,7 @@ const SCALES = [
   }
 
   details {
-    max-width: 22rem;
+    max-width: 18rem;
     margin-top: 0.75rem;
     font-size: 0.8rem;
     color: var(--muted);
@@ -176,7 +193,7 @@ const SCALES = [
 
   label {
     display: grid;
-    grid-template-columns: 9.5rem 1fr 2.6rem;
+    grid-template-columns: 8.5rem 1fr 2.4rem;
     align-items: center;
     gap: 0.5rem;
   }
@@ -201,12 +218,6 @@ const SCALES = [
     text-align: right;
   }
 
-  .knobs button {
-    justify-self: start;
-    margin-top: 0.4rem;
-    font-size: inherit;
-  }
-
   .home {
     font-size: 0.8rem;
     font-style: normal;
@@ -224,8 +235,56 @@ const SCALES = [
 
   /** Degrees per second the real sky turns */
   const REAL = 360.98564736629 / 86_400;
-  /** Faintest magnitude that still gets the fuller voice */
-  const NAMED = 1.6;
+  /** The stars with a name of their own, by right ascension and declination */
+  const NAMES: [ra: number, dec: number, name: string][] = [
+    [101.29, -16.72, "Sirius"],
+    [95.99, -52.7, "Canopus"],
+    [213.92, 19.18, "Arcturus"],
+    [219.9, -60.83, "Rigil Kentaurus"],
+    [219.9, -60.84, "Toliman"],
+    [279.23, 38.78, "Vega"],
+    [78.63, -8.2, "Rigel"],
+    [114.83, 5.22, "Procyon"],
+    [24.43, -57.24, "Achernar"],
+    [88.79, 7.41, "Betelgeuse"],
+    [210.96, -60.37, "Hadar"],
+    [297.7, 8.87, "Altair"],
+    [186.65, -63.1, "Acrux"],
+    [68.98, 16.51, "Aldebaran"],
+    [201.3, -11.16, "Spica"],
+    [247.35, -26.43, "Antares"],
+    [116.33, 28.03, "Pollux"],
+    [344.41, -29.62, "Fomalhaut"],
+    [191.93, -59.69, "Mimosa"],
+    [152.09, 11.97, "Regulus"],
+    [104.66, -28.97, "Adhara"],
+    [113.65, 31.89, "Castor"],
+    [187.79, -57.11, "Gacrux"],
+    [263.4, -37.1, "Shaula"],
+    [81.28, 6.35, "Bellatrix"],
+    [81.57, 28.61, "Elnath"],
+    [138.3, -69.72, "Miaplacidus"],
+    [84.05, -1.2, "Alnilam"],
+    [332.06, -46.96, "Alnair"],
+    [85.19, -1.94, "Alnitak"],
+    [183.79, -58.75, "Imai"],
+  ];
+  const names = new Map<Star, string>();
+  for (const [ra, dec, name] of NAMES) {
+    const star = stars.find((star) => star[0] === ra && star[1] === dec);
+    if (star) names.set(star, name);
+  }
+
+  /**
+   * The Southern Cross always plays the same open fifths, in semitones above
+   * A3 from its foot to its head, whatever scale the Moon has picked
+   */
+  const CROSS: Record<string, number> = {
+    Acrux: 0,
+    Mimosa: 7,
+    Imai: 12,
+    Gacrux: 19,
+  };
   /** Degrees across the whole chart, see sky.svg.ts */
   const SPAN = 260;
 
@@ -243,7 +302,8 @@ const SCALES = [
 
   // The controls under "Sound"
   const panel = document.querySelector<HTMLElement>(".knobs")!;
-  const picker = panel.querySelector("select")!;
+  const picker = panel.querySelector<HTMLSelectElement>("[name=scale]")!;
+  const presets = panel.querySelector<HTMLSelectElement>("[name=preset]")!;
   const knobs = Object.fromEntries(
     [...panel.querySelectorAll("input")].map((input) => [input.name, input]),
   );
@@ -316,13 +376,16 @@ const SCALES = [
     }
   };
   panel.addEventListener("input", tune);
-  panel.querySelector("button")!.addEventListener("click", () => {
-    for (const input of Object.values(knobs)) input.value = input.defaultValue;
-    picker.value = "";
+  presets.addEventListener("change", () => {
+    const values = JSON.parse(presets.value);
+    for (const input of Object.values(knobs)) {
+      input.value = values[input.name] ?? input.defaultValue;
+    }
     tune();
   });
 
-  const play = ([, dec, mag, bv]: Star) => {
+  const play = (star: Star) => {
+    const [, dec, mag, bv] = star;
     if (!audio || audio.state !== "running") return;
     const height = (90 + dec) / reach();
     const scale = currentScale();
@@ -333,9 +396,13 @@ const SCALES = [
     // Cool red stars sound an octave lower and rounder, hot blue ones glassier
     const warm = (bv ?? 0.65) > 1;
     const hot = (bv ?? 0.65) < 0.3;
-    const pitch = (warm ? 55 : 110) * 2 ** (semitones / 12);
-    // The first-magnitude stars, the ones with names, ring like a struck bell
-    const named = mag <= NAMED;
+    const interval = CROSS[names.get(star) ?? ""];
+    const pitch =
+      interval === undefined
+        ? (warm ? 55 : 110) * 2 ** (semitones / 12)
+        : 220 * 2 ** (interval / 12);
+    // The stars with names ring like a struck bell
+    const named = names.has(star);
     // A magnitude is a factor of about 2.5 in light; the ear gets a gentler curve
     const faint = 10 ** (-(0.34 - 0.24 * knob("contrast")) * mag);
     const level =
@@ -378,6 +445,10 @@ const SCALES = [
     named: boolean;
   };
   let rings: Ring[] = [];
+  /** Names shown beside the line for a few seconds */
+  let labels: { name: string; y: number; born: number }[] = [];
+  /** When a named star last took the readout */
+  let named = -Infinity;
   const tint = (bv: number | null) =>
     (bv ?? 0.65) < 0.3
       ? "207,220,255"
@@ -453,14 +524,26 @@ const SCALES = [
       rings.push({
         y: pole.y - (90 + star[1]) * perDegree,
         born: now,
-        size: star[2] <= NAMED ? 46 : Math.max(3, 16 - star[2] * 2.2),
+        size: names.has(star) ? 46 : Math.max(3, 16 - star[2] * 2.2),
         color: tint(star[3]),
-        named: star[2] <= NAMED,
+        named: names.has(star),
       });
     }
-    if (notes[0]) {
-      const [ra, dec, mag] = notes[0];
-      readout.textContent = `α ${hours(ra)}, δ ${degrees(dec)}, mag ${mag.toFixed(1)}`;
+    for (const star of notes) {
+      const name = names.get(star);
+      const y = pole.y - (90 + star[1]) * perDegree;
+      // Two names on the same spot would be unreadable: the first one stays
+      if (name && !labels.some((label) => Math.abs(label.y - y) < 16)) {
+        labels.push({ name, y, born: now });
+      }
+    }
+    // A named star stays in the readout until the next one
+    const told = notes.find((star) => names.has(star)) ?? notes[0];
+    if (told && (names.has(told) || now - named > 6000)) {
+      const [ra, dec, mag] = told;
+      const name = names.get(told);
+      if (name) named = now;
+      readout.textContent = `${name ? `${name}, ` : ""}α ${hours(ra)}, δ ${degrees(dec)}, mag ${mag.toFixed(1)}`;
     }
 
     pen.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
@@ -470,6 +553,14 @@ const SCALES = [
     pen.moveTo(pole.x, pole.y);
     pen.lineTo(pole.x, 0);
     pen.stroke();
+    labels = labels.filter((label) => now - label.born < 7000);
+    pen.font = 'italic 15px "STIX Two Text", serif';
+    for (const label of labels) {
+      const age = (now - label.born) / 7000;
+      const shown = Math.min(1, age * 12, (1 - age) * 3);
+      pen.fillStyle = `rgba(232,239,251,${(0.9 * shown).toFixed(3)})`;
+      pen.fillText(label.name, pole.x + 22, label.y + 5);
+    }
     rings = rings.filter((ring) => now - ring.born < 1800);
     for (const ring of rings) {
       const age = (now - ring.born) / 1800;
