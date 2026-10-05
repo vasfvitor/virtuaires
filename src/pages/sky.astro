@@ -729,7 +729,13 @@ const SCALES = [
   /** How far past the line, in degrees, a star keeps its name */
   const TRAIL = 12;
   /** Names that follow their stars away from the line */
-  let labels: { name: string; y: number; born: number; crossed: number }[] = [];
+  let labels: {
+    name: string;
+    y: number;
+    born: number;
+    crossed: number;
+    west: number;
+  }[] = [];
   /** When a named star last took the readout */
   let named = -Infinity;
   const tint = (bv: number | null) =>
@@ -785,12 +791,16 @@ const SCALES = [
       });
     }
     const first = hits.filter((hit) => hit.line === 0);
-    for (const { star } of first) {
+    for (const { star, line } of hits) {
       const name = names.get(star);
       const y = pole.y - (90 + star[1]) * perDegree;
+      const { west } = LINES[line];
       // Two names on the same spot would be unreadable: the first one stays
-      if (name && !labels.some((label) => Math.abs(label.y - y) < 16)) {
-        labels.push({ name, y, born, crossed: star[0] });
+      const taken = labels.some(
+        (label) => label.west === west && Math.abs(label.y - y) < 16,
+      );
+      if (name && !taken) {
+        labels.push({ name, y, born, crossed: star[0], west });
       }
     }
     // A named star stays in the readout until the next one
@@ -922,14 +932,17 @@ const SCALES = [
       pen.stroke();
     }
     pen.globalAlpha = 1;
-    const turnedSince = (ra: number) => (((time - ra) % 360) + 360) % 360;
-    labels = labels.filter((label) => turnedSince(label.crossed) < TRAIL);
+    // Degrees a star has turned past its line: below zero when its note is
+    // scheduled but it has yet to arrive
+    const past = (label: (typeof labels)[number]) =>
+      ((((time - label.crossed - label.west) % 360) + 540) % 360) - 180;
+    labels = labels.filter((label) => past(label) < TRAIL);
     pen.font = 'italic 15px "STIX Two Text", serif';
     for (const label of labels) {
       if (now < label.born) continue;
       // The star has turned about the pole since it crossed
-      const turned = turnedSince(label.crossed);
-      const angle = (turned * Math.PI) / 180;
+      const turned = Math.max(0, past(label));
+      const angle = ((turned + label.west) * Math.PI) / 180;
       const distance = pole.y - label.y;
       const shown = Math.min(
         1,
