@@ -677,9 +677,10 @@ const glow = (() => {
   };
 
   /**
-   * The stars that reach a line during one step: the brightest of the
-   * unnamed ones, and, on a beat, every named star that crossed since the
-   * last one. A bell between beats would sound out of time
+   * The stars that reach a line nearest a step: the brightest of the unnamed
+   * ones, and, on an eighth note, every named star nearest it. A bell on a
+   * sixteenth would sound out of time. Rounding to the nearest step, rather
+   * than the next, keeps the sound within half a step of the crossing
    */
   const hitsAt = (step: number) => {
     const known = score.get(step);
@@ -687,18 +688,18 @@ const glow = (() => {
     const hits: Hit[] = [];
     for (const line of lines) {
       const limit = span(line.west) - 90;
-      const since = (steps: number) =>
+      const around = (half: number) =>
         crossed(
-          (step - steps) * GRID - line.west,
-          step * GRID - line.west,
+          (step - half) * GRID - line.west,
+          (step + half) * GRID - line.west,
           limit,
         );
-      if (wrap(step, 4) === 0) {
-        for (const star of since(4).filter((star) => names.has(star))) {
+      if (wrap(step, 2) === 0) {
+        for (const star of around(1).filter((star) => names.has(star))) {
           hits.push({ star, line, band: "bells" });
         }
       }
-      const found = since(1).sort((a, b) => a[2] - b[2]);
+      const found = around(0.5).sort((a, b) => a[2] - b[2]);
       const glint = found.find((star) => !names.has(star));
       if (glint) hits.push({ star: glint, line, band: "dust" });
     }
