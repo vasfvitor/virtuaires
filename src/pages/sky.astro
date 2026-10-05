@@ -4,19 +4,26 @@ import { UP, moonLabel, moonPhase, siderealTime } from "../lib/sky";
 
 const now = new Date();
 
+/** The instruments: key, name, what plays it and starting level */
+const BANDS = [
+  ["bells", "Bells", "The stars with a name of their own", 1],
+  ["stars", "Stars", "The stars down to magnitude 4.5", 1],
+  ["dust", "Dust", "Every fainter star", 1],
+  [
+    "bass",
+    "Bass",
+    "Root from the last bell, beat from sidereal time, tone from the Milky Way",
+    0.4,
+  ],
+] as const;
 /** The sound controls: key, label, lowest, highest, step and starting value */
 const KNOBS = [
   ["volume", "Volume", 0, 1, 0.01, 0.7],
   ["echo", "Echo level", 0, 1, 0.01, 1],
   ["repeats", "Echo repeats", 0, 0.85, 0.01, 0.42],
-  ["gap", "Echo time, s", 0.05, 1, 0.01, 0.41],
   ["tone", "Echo brightness, Hz", 400, 8000, 50, 2200],
   ["length", "Note length", 0.3, 3, 0.05, 1],
   ["shimmer", "Overtone", 0, 1, 0.01, 0.25],
-  ["contrast", "Faint stars", 0, 1, 0.01, 0.35],
-  ["bright", "Bright stars", 0, 1, 0.01, 0.6],
-  ["bass", "Bass", 0, 1, 0.01, 0.4],
-  ["pace", "Pace, °/s", 0, 3, 0.01, 0.3],
   // 180° less the golden angle
   ["line", "Second line, °", 10, 90, 0.5, 42.5],
 ] as const;
@@ -24,10 +31,10 @@ const KNOBS = [
 const PRESETS = {
   Night: {},
   Dry: { echo: 0, length: 0.7 },
-  Cathedral: { repeats: 0.7, gap: 0.6, tone: 1400, length: 1.6 },
-  Glass: { shimmer: 0.8, tone: 6000, length: 0.6, repeats: 0.3, gap: 0.25 },
-  "Bright stars only": { contrast: 0, bright: 1 },
-  Rain: { pace: 0.6, length: 0.4, contrast: 0.6, repeats: 0.25 },
+  Cathedral: { tempo: 54, repeats: 0.7, tone: 1400, length: 1.6 },
+  Glass: { shimmer: 0.8, tone: 6000, length: 0.6, repeats: 0.3 },
+  "Bells only": { stars: 0, dust: 0, bass: 0 },
+  Rain: { tempo: 132, length: 0.4, repeats: 0.25 },
 };
 const SCALES = [
   "Lydian",
@@ -50,7 +57,7 @@ const SCALES = [
     aria-hidden="true"
     style={`rotate: ${(siderealTime(now) - UP).toFixed(2)}deg`}
   ></div>
-  <canvas aria-hidden="true"></canvas>
+  <canvas class="stage" aria-hidden="true"></canvas>
   <main>
     <h1>The southern sky, played</h1>
     <button type="button" aria-pressed="false">
@@ -61,7 +68,38 @@ const SCALES = [
       <br />
       <span class="star">&nbsp;</span>
     </p>
-    <details open>
+    <div class="mix">
+      <label>
+        <span>Tempo, bpm</span>
+        <input
+          type="range"
+          name="tempo"
+          min="30"
+          max="200"
+          step="1"
+          value="72"
+        />
+        <output>72</output>
+      </label>
+      {BANDS.map(([key, name, source, value]) => (
+        <div class="strip">
+          <label title={source}>
+            <span>{name}</span>
+            <input
+              type="range"
+              name={key}
+              min="0"
+              max="1.5"
+              step="0.01"
+              {value}
+              aria-label={`${name} level`}
+            />
+          </label>
+          <canvas data-roll={key} aria-hidden="true" />
+        </div>
+      ))}
+    </div>
+    <details>
       <summary>Sound</summary>
       <div class="knobs">
         <label>
@@ -112,7 +150,7 @@ const SCALES = [
     animation: reveal 1618ms ease-out both;
   }
 
-  canvas {
+  .stage {
     position: fixed;
     /* Above the text, so a name is never hidden behind the controls */
     z-index: 1;
@@ -171,11 +209,30 @@ const SCALES = [
     font-variant-numeric: tabular-nums;
   }
 
-  details {
+  details,
+  .mix {
     max-width: 18rem;
     margin-top: 0.75rem;
     font-size: 0.8rem;
     color: var(--muted);
+  }
+
+  /* One strip per instrument: its level, and what it is about to play */
+  .strip {
+    margin-top: 0.3rem;
+  }
+
+  .strip label {
+    grid-template-columns: 1fr 6rem;
+  }
+
+  .strip canvas {
+    display: block;
+    width: 100%;
+    height: 2.1rem;
+    border: 1px solid var(--rule);
+    border-radius: 0.25rem;
+    background: color-mix(in srgb, var(--ground) 75%, transparent);
   }
 
   summary {
@@ -232,12 +289,26 @@ const SCALES = [
   import { UP, moonPhase, siderealTime } from "../lib/sky";
 
   type Star = [ra: number, dec: number, mag: number, bv: number | null];
+  type Rank = "bells" | "stars" | "dust";
+  /** A star reaching a line: which line, and which instrument it plays */
+  type Hit = { star: Star; line: number; rank: Rank };
 
   /** Sorted by right ascension, the order in which the stars reach the line */
   const stars = [...(catalogue as Star[])].sort((a, b) => a[0] - b[0]);
 
   /** Degrees per second the real sky turns */
   const REAL = 360.98564736629 / 86_400;
+  /** Degrees of turn per beat: a quarter of a degree is one sidereal minute */
+  const BEAT = 0.25;
+  /** Everything sounds on a grid of sixteenth notes */
+  const GRID = BEAT / 4;
+  /** Seconds of sound scheduled ahead, so the rhythm does not depend on the frame rate */
+  const AHEAD = 0.12;
+  /** Faintest magnitude that still plays a full note; the rest are dust */
+  const CLEAR = 4.5;
+  /** Degrees across the whole chart, see sky.svg.ts */
+  const SPAN = 260;
+
   /** The stars with a name of their own, by right ascension and declination */
   const NAMES: [ra: number, dec: number, name: string][] = [
     [101.29, -16.72, "Sirius"],
@@ -288,8 +359,6 @@ const SCALES = [
     Imai: 12,
     Gacrux: 19,
   };
-  /** Degrees across the whole chart, see sky.svg.ts */
-  const SPAN = 260;
 
   /** One scale per stretch of the lunar month, from the full Moon's to the new Moon's */
   const SCALES = [
@@ -303,23 +372,33 @@ const SCALES = [
   const lit = (1 - Math.cos(2 * Math.PI * moonPhase(new Date()))) / 2;
   const moonScale = Math.round((1 - lit) * (SCALES.length - 1));
 
-  // The controls under "Sound"
-  const panel = document.querySelector<HTMLElement>(".knobs")!;
-  const picker = panel.querySelector<HTMLSelectElement>("[name=scale]")!;
-  const presets = panel.querySelector<HTMLSelectElement>("[name=preset]")!;
+  // The controls
+  const main = document.querySelector("main")!;
+  const picker = main.querySelector<HTMLSelectElement>("[name=scale]")!;
+  const presets = main.querySelector<HTMLSelectElement>("[name=preset]")!;
   const knobs = Object.fromEntries(
-    [...panel.querySelectorAll("input")].map((input) => [input.name, input]),
+    [...main.querySelectorAll<HTMLInputElement>("input[type=range]")].map(
+      (input) => [input.name, input],
+    ),
   );
   const knob = (name: string) => knobs[name].valueAsNumber;
   const currentScale = () =>
     SCALES[picker.value === "" ? moonScale : Number(picker.value)];
 
   const chart = document.querySelector<HTMLElement>(".chart")!;
-  const canvas = document.querySelector("canvas")!;
+  const canvas = document.querySelector<HTMLCanvasElement>(".stage")!;
   const pen = canvas.getContext("2d")!;
   const button = document.querySelector<HTMLButtonElement>("main > button")!;
   const readout = document.querySelector<HTMLElement>(".star")!;
   const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  /** One small window per instrument, showing what it is about to play */
+  const rolls = [
+    ...main.querySelectorAll<HTMLCanvasElement>("[data-roll]"),
+  ].map((sheet) => ({
+    sheet,
+    key: sheet.dataset.roll!,
+    pen: sheet.getContext("2d")!,
+  }));
 
   /**
    * The lines the stars play on: the meridian, and a second one the same
@@ -347,205 +426,36 @@ const SCALES = [
     );
   };
 
+  /** What crosses the lines on each step of the grid, worked out once */
+  const score = new Map<number, Hit[]>();
+
   // The lines run from the pole to the edge of the window
   let pole = { x: 0, y: 0 };
   let perDegree = 1;
   const measure = () => {
     const ratio = devicePixelRatio;
-    canvas.width = canvas.clientWidth * ratio;
-    canvas.height = canvas.clientHeight * ratio;
-    pen.setTransform(ratio, 0, 0, ratio, 0, 0);
+    for (const each of [{ sheet: canvas, pen }, ...rolls]) {
+      each.sheet.width = each.sheet.clientWidth * ratio;
+      each.sheet.height = each.sheet.clientHeight * ratio;
+      each.pen.setTransform(ratio, 0, 0, ratio, 0, 0);
+    }
     // Measured on the chart itself: turning it does not move its centre
     const box = chart.getBoundingClientRect();
     pole = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
     perDegree = chart.offsetWidth / SPAN;
+    score.clear();
   };
   measure();
   addEventListener("resize", measure);
 
-  /** How many degrees of declination the line covers, from the pole up */
+  /** How many degrees of declination the meridian covers, from the pole up */
   const reach = () => pole.y / perDegree;
-
-  // Sound: a soft bell per star, into a long echo
-  let audio: AudioContext | undefined;
-  let bus: GainNode;
-  /** Everything but the named stars: it steps back while one of them rings */
-  let under: GainNode;
-  let low: GainNode;
-  /** What each control drives, once there is sound */
-  let dials: Record<string, AudioParam> = {};
-
-  const wake = () => {
-    audio = new AudioContext();
-    bus = audio.createGain();
-    const limiter = audio.createDynamicsCompressor();
-    const echo = audio.createDelay(1);
-    const damp = audio.createBiquadFilter();
-    const again = audio.createGain();
-    const wet = audio.createGain();
-    bus.connect(limiter);
-    under = audio.createGain();
-    under.connect(bus);
-
-    // The bass stays out of the echo, which would blur it
-    low = audio.createGain();
-    low.connect(limiter);
-    survey();
-    bus.connect(echo).connect(damp).connect(again).connect(echo);
-    damp.connect(wet).connect(limiter);
-    limiter.connect(audio.destination);
-    dials = {
-      volume: bus.gain,
-      echo: wet.gain,
-      repeats: again.gain,
-      gap: echo.delayTime,
-      tone: damp.frequency,
-      bass: low.gain,
-    };
-    for (const name in dials) dials[name].value = knob(name);
-  };
-
-  const tune = () => {
-    for (const input of Object.values(knobs)) {
-      input.nextElementSibling!.textContent = input.value;
-      dials[input.name]?.setTargetAtTime(
-        input.valueAsNumber,
-        audio!.currentTime,
-        0.05,
-      );
-    }
-  };
-  panel.addEventListener("input", tune);
-  presets.addEventListener("change", () => {
-    const values = JSON.parse(presets.value);
-    for (const input of Object.values(knobs)) {
-      input.value = values[input.name] ?? input.defaultValue;
-    }
-    tune();
-  });
-
-  /** Faintest magnitude that still plays a full note; the rest are a patter of ticks */
-  const CLEAR = 3.5;
-  /** Faintest magnitude that always plays its note, however busy the sky */
-  const BOLD = 2.6;
-  /** Seconds between full notes: a faster sky turns the surplus into ticks */
-  const BREATH = 0.16;
-  let noted = 0;
-  let ticked = 0;
-
-  const play = (star: Star, gain: number) => {
-    const [, dec, mag, bv] = star;
-    if (!audio || audio.state !== "running") return;
-    const at = audio.currentTime;
-    // Three ranks: the named stars are bells, the clear ones notes, the rest ticks
-    const named = names.has(star);
-    // The brightest of the clear ones never give way to the budget
-    const clear =
-      !named && (mag <= BOLD || (mag <= CLEAR && at - noted >= BREATH));
-    if (clear) noted = at;
-    if (!named && !clear) {
-      if (at - ticked < 0.04) return;
-      ticked = at;
-    }
-
-    const height = (90 + dec) / reach();
-    const scale = currentScale();
-    // Higher on the line is higher in pitch, over four octaves from A2
-    const step = Math.floor(height * scale.length * 4);
-    const semitones =
-      12 * Math.floor(step / scale.length) + scale[step % scale.length];
-    // Cool red stars sound an octave lower and rounder, hot blue ones glassier
-    const warm = (bv ?? 0.65) > 1;
-    const hot = (bv ?? 0.65) < 0.3;
-    const interval = CROSS[names.get(star) ?? ""];
-    const pitch =
-      interval === undefined
-        ? (warm ? 55 : 110) * 2 ** (semitones / 12)
-        : 220 * 2 ** (interval / 12);
-    // A magnitude is a factor of about 2.5 in light; the ear gets a gentler curve
-    const faint = 10 ** (-(0.34 - 0.24 * knob("contrast")) * mag);
-    const level =
-      Math.max(named ? 0.4 : clear ? 0.12 : 0, Math.min(0.9, 0.5 * faint)) *
-      (1 - height / 2) *
-      gain;
-    const length = (0.8 + 4 * level) * knob("length") * (named ? 2 : 1);
-
-    const tone = (frequency: number, peak: number, ends: number) => {
-      if (peak < 0.0005) return;
-      const voice = audio!.createOscillator();
-      const loudness = audio!.createGain();
-      voice.type = warm ? "triangle" : "sine";
-      voice.frequency.value = frequency;
-      loudness.gain.setValueAtTime(0, at);
-      loudness.gain.linearRampToValueAtTime(peak, at + (warm ? 0.04 : 0.006));
-      loudness.gain.exponentialRampToValueAtTime(0.0001, at + ends);
-      voice.connect(loudness).connect(named ? bus : under);
-      voice.start(at);
-      voice.stop(at + ends + 0.05);
-    };
-
-    if (!named && !clear) {
-      tone(pitch * 2, level * 0.6, 0.18);
-      return;
-    }
-    tone(pitch, level, length);
-    if (!warm) {
-      tone(pitch * (hot ? 3 : 2), level * knob("shimmer"), length * 0.4);
-    }
-    if (named) {
-      const bell = level * knob("bright");
-      tone(pitch / 2, bell, length);
-      tone(pitch * 2, bell * 0.5, length * 0.7);
-      tone(pitch * 3, bell * 0.3, length * 0.5);
-      tone(pitch * 4.2, bell * 0.12, length * 0.25);
-      // The bass takes its root from the last bell
-      root = (interval ?? semitones) % 12;
-      // The rest of the sky steps back, then returns as the bell fades
-      under.gain.cancelScheduledValues(at);
-      under.gain.setTargetAtTime(0.3, at, 0.03);
-      under.gain.setTargetAtTime(1, at + 0.5, 0.9);
-    }
-  };
-
-  // Each note leaves a ring where its star crossed
-  type Ring = {
-    x: number;
-    y: number;
-    born: number;
-    size: number;
-    color: string;
-    named: boolean;
-  };
-  let rings: Ring[] = [];
-  /** How far past the line, in degrees, a star keeps its name */
-  const TRAIL = 12;
-  /** Names that follow their stars away from the line */
-  let labels: { name: string; y: number; born: number; crossed: number }[] = [];
-  /** When a named star last took the readout */
-  let named = -Infinity;
-  const tint = (bv: number | null) =>
-    (bv ?? 0.65) < 0.3
-      ? "207,220,255"
-      : (bv ?? 0.65) > 1
-        ? "255,207,135"
-        : "255,246,224";
-
-  const hours = (ra: number) => {
-    const minutes = Math.round((ra / 15) * 60) % 1440;
-    return `${String(Math.floor(minutes / 60)).padStart(2, "0")}h ${String(minutes % 60).padStart(2, "0")}m`;
-  };
-  const degrees = (dec: number) => {
-    const minutes = Math.round(Math.abs(dec) * 60);
-    return `${dec < 0 ? "−" : "+"}${Math.floor(minutes / 60)}° ${String(minutes % 60).padStart(2, "0")}′`;
-  };
 
   /** The stars whose right ascension lies between two sidereal times, up to a declination */
   const crossed = (from: number, to: number, limit: number) => {
-    const [low, high] = from < to ? [from, to] : [to, from];
-    if (high - low >= 360) return [];
     const found: Star[] = [];
     const wrap = (n: number) => ((n % 360) + 360) % 360;
-    const [a, b] = [wrap(low), wrap(high)];
+    const [a, b] = [wrap(from), wrap(to)];
     const first = (ra: number) => {
       let [i, j] = [0, stars.length];
       while (i < j) {
@@ -568,24 +478,192 @@ const SCALES = [
     return found;
   };
 
-  let time = siderealTime(new Date());
-  /** Where the sky stood at the last frame */
-  let seen = time;
-  let speed = REAL;
-  let listening = false;
-  /** Where the second line stood at the last frame */
-  let second = knob("line");
-  let last = performance.now();
+  /**
+   * The stars that reach a line during one step. Each line gives a step all
+   * its bells, but only its brightest star as a note and its next as dust
+   */
+  const hitsAt = (step: number) => {
+    const known = score.get(step);
+    if (known) return known;
+    const hits: Hit[] = [];
+    lines().forEach(({ west }, line) => {
+      const found = crossed(
+        (step - 1) * GRID - west,
+        step * GRID - west,
+        span(west) - 90,
+      ).sort((a, b) => a[2] - b[2]);
+      const taken = new Set<Rank>();
+      for (const star of found) {
+        const rank: Rank = names.has(star)
+          ? "bells"
+          : star[2] <= CLEAR && !taken.has("stars")
+            ? "stars"
+            : "dust";
+        if (rank !== "bells" && taken.has(rank)) continue;
+        taken.add(rank);
+        hits.push({ star, line, rank });
+      }
+    });
+    if (score.size > 600) score.clear();
+    score.set(step, hits);
+    return hits;
+  };
 
-  // The bass line has three sources: its root is the last named star's note,
-  // its beat is sidereal time, and the Milky Way on the meridian opens its tone
-  /** Semitones above A1 */
-  let root = 0;
-  /** Degrees of turn per beat: a quarter of a degree is one sidereal minute */
-  const BEAT = 0.25;
-  /** Semitones above the root on each beat of the bar, or a rest */
+  /** Semitones above the root on each beat of the bass's bar, or a rest */
   const BAR = [0, null, 0, 7, 0, null, 12, 7];
-  let beat = 0;
+  const bassAt = (step: number) =>
+    step % 4
+      ? null
+      : BAR[(((step / 4) % BAR.length) + BAR.length) % BAR.length];
+
+  /** How high on the meridian a star crosses, 0 at the pole and 1 at the top */
+  const heightOf = (star: Star) => Math.min(1, (90 + star[1]) / reach());
+
+  // Sound
+  let audio: AudioContext | undefined;
+  /** Where each instrument goes in */
+  let outs: Record<Rank | "bass", GainNode>;
+  /** Everything but the bells: it steps back while one of them rings */
+  let under: GainNode;
+  let delay: DelayNode | undefined;
+  /** What each control drives, once there is sound */
+  let dials: Record<string, AudioParam> = {};
+
+  const wake = () => {
+    audio = new AudioContext();
+    const bus = audio.createGain();
+    const limiter = audio.createDynamicsCompressor();
+    delay = audio.createDelay(1);
+    const damp = audio.createBiquadFilter();
+    const again = audio.createGain();
+    const wet = audio.createGain();
+    under = audio.createGain();
+    outs = {
+      bells: audio.createGain(),
+      stars: audio.createGain(),
+      dust: audio.createGain(),
+      bass: audio.createGain(),
+    };
+    outs.bells.connect(bus);
+    outs.stars.connect(under);
+    outs.dust.connect(under);
+    under.connect(bus);
+    // The bass stays out of the echo, which would blur it
+    outs.bass.connect(limiter);
+    bus.connect(limiter);
+    bus.connect(delay).connect(damp).connect(again).connect(delay);
+    damp.connect(wet).connect(limiter);
+    limiter.connect(audio.destination);
+    survey();
+    dials = {
+      volume: bus.gain,
+      echo: wet.gain,
+      repeats: again.gain,
+      tone: damp.frequency,
+      bells: outs.bells.gain,
+      stars: outs.stars.gain,
+      dust: outs.dust.gain,
+      bass: outs.bass.gain,
+    };
+    for (const name in dials) dials[name].value = knob(name);
+    tune();
+  };
+
+  const tune = () => {
+    for (const input of Object.values(knobs)) {
+      const shown = input.nextElementSibling;
+      if (shown) shown.textContent = input.value;
+      dials[input.name]?.setTargetAtTime(
+        input.valueAsNumber,
+        audio!.currentTime,
+        0.05,
+      );
+    }
+    // The echo answers half a beat later, whatever the tempo
+    delay?.delayTime.setTargetAtTime(
+      Math.min(1, 30 / knob("tempo")),
+      audio!.currentTime,
+      0.05,
+    );
+    score.clear();
+  };
+  main.addEventListener("input", tune);
+  presets.addEventListener("change", () => {
+    const values = JSON.parse(presets.value);
+    for (const input of Object.values(knobs)) {
+      input.value = values[input.name] ?? input.defaultValue;
+    }
+    tune();
+  });
+
+  /** Semitones above A1 the bass sits on: the last bell's note */
+  let root = 0;
+
+  const sound = ({ star, line, rank }: Hit, at: number) => {
+    if (!audio || audio.state !== "running") return;
+    const [, , mag, bv] = star;
+    const height = heightOf(star);
+    const scale = currentScale();
+    // Higher on the line is higher in pitch, over four octaves from A2
+    const step = Math.min(
+      scale.length * 4 - 1,
+      Math.floor(height * scale.length * 4),
+    );
+    const semitones =
+      12 * Math.floor(step / scale.length) + scale[step % scale.length];
+    // Cool red stars sound an octave lower and rounder, hot blue ones glassier
+    const warm = (bv ?? 0.65) > 1;
+    const hot = (bv ?? 0.65) < 0.3;
+    const interval = CROSS[names.get(star) ?? ""];
+    const pitch =
+      interval === undefined
+        ? (warm ? 55 : 110) * 2 ** (semitones / 12)
+        : 220 * 2 ** (interval / 12);
+    // A magnitude is a factor of about 2.5 in light; the ear gets a gentler curve
+    const floor = { bells: 0.4, stars: 0.12, dust: 0 }[rank];
+    const level =
+      Math.max(floor, Math.min(0.9, 0.5 * 10 ** (-0.256 * mag))) *
+      (1 - height / 2) *
+      lines()[line].gain;
+    const length =
+      (0.8 + 4 * level) * knob("length") * (rank === "bells" ? 2 : 1);
+
+    const tone = (frequency: number, peak: number, ends: number) => {
+      if (peak < 0.0005) return;
+      const voice = audio!.createOscillator();
+      const loudness = audio!.createGain();
+      voice.type = warm ? "triangle" : "sine";
+      voice.frequency.value = frequency;
+      loudness.gain.setValueAtTime(0, at);
+      loudness.gain.linearRampToValueAtTime(peak, at + (warm ? 0.04 : 0.006));
+      loudness.gain.exponentialRampToValueAtTime(0.0001, at + ends);
+      voice.connect(loudness).connect(outs[rank]);
+      voice.start(at);
+      voice.stop(at + ends + 0.05);
+    };
+
+    if (rank === "dust") {
+      tone(pitch * 2, level * 0.6, 0.18);
+      return;
+    }
+    tone(pitch, level, length);
+    if (!warm) {
+      tone(pitch * (hot ? 3 : 2), level * knob("shimmer"), length * 0.4);
+    }
+    if (rank === "bells") {
+      const bell = level * 0.6;
+      tone(pitch / 2, bell, length);
+      tone(pitch * 2, bell * 0.5, length * 0.7);
+      tone(pitch * 3, bell * 0.3, length * 0.5);
+      tone(pitch * 4.2, bell * 0.12, length * 0.25);
+      // The bass takes its root from the last bell
+      root = (interval ?? semitones) % 12;
+      // The rest of the sky steps back, then returns as the bell fades
+      under.gain.cancelScheduledValues(at);
+      under.gain.setTargetAtTime(0.3, at, 0.03);
+      under.gain.setTargetAtTime(1, at + 0.5, 0.9);
+    }
+  };
 
   /** How much of the Milky Way lies on the meridian at every other degree, 0 to 1 */
   let glow: number[] = [];
@@ -621,88 +699,211 @@ const SCALES = [
     const most = Math.max(...totals);
     glow = totals.map((total) => total / most);
   };
+  const glowAt = (sidereal: number) =>
+    glow[Math.floor((((sidereal % 360) + 360) % 360) / 2)] ?? 0;
 
-  const pluck = (index: number) => {
+  // The bass line has three sources: its root is the last bell's note, its
+  // beat is sidereal time, and the Milky Way on the meridian opens its tone
+  const pluck = (interval: number, sidereal: number, at: number) => {
     if (!audio || audio.state !== "running") return;
-    const interval = BAR[((index % BAR.length) + BAR.length) % BAR.length];
-    if (interval === null) return;
-    const at = audio.currentTime;
-    const density = glow[Math.floor((((time % 360) + 360) % 360) / 2)] ?? 0;
     const voice = audio.createOscillator();
     const muffle = audio.createBiquadFilter();
     const loudness = audio.createGain();
     voice.type = "sawtooth";
     voice.frequency.value = 55 * 2 ** ((root + interval) / 12);
-    muffle.frequency.value = 160 + 1500 * density;
+    muffle.frequency.value = 160 + 1500 * glowAt(sidereal);
     muffle.Q.value = 3;
     loudness.gain.setValueAtTime(0, at);
     loudness.gain.linearRampToValueAtTime(1, at + 0.01);
     loudness.gain.exponentialRampToValueAtTime(0.0001, at + 0.5);
-    voice.connect(muffle).connect(loudness).connect(low);
+    voice.connect(muffle).connect(loudness).connect(outs.bass);
     voice.start(at);
     voice.stop(at + 0.55);
   };
 
-  const frame = (now: number) => {
-    const elapsed = Math.min(0.1, (now - last) / 1000);
-    last = now;
-    time += speed * elapsed;
-    // The sky keeps its real pace until someone listens, then eases to the chosen one
-    const rest = listening ? Math.max(REAL, knob("pace")) : REAL;
-    speed = rest + (speed - rest) * Math.exp(-elapsed / 1.5);
-    chart.style.rotate = `${(time - UP).toFixed(3)}deg`;
+  // Each note leaves a ring where its star crossed
+  type Ring = {
+    x: number;
+    y: number;
+    born: number;
+    size: number;
+    color: string;
+    named: boolean;
+  };
+  let rings: Ring[] = [];
+  /** How far past the line, in degrees, a star keeps its name */
+  const TRAIL = 12;
+  /** Names that follow their stars away from the line */
+  let labels: { name: string; y: number; born: number; crossed: number }[] = [];
+  /** When a named star last took the readout */
+  let named = -Infinity;
+  const tint = (bv: number | null) =>
+    (bv ?? 0.65) < 0.3
+      ? "207,220,255"
+      : (bv ?? 0.65) > 1
+        ? "255,207,135"
+        : "255,246,224";
 
-    // A fast sky halves the bass until it is back to a few beats a second
-    let size = BEAT;
-    while (speed / size > 4) size *= 2;
-    const index = Math.floor(time / size);
-    if (index !== beat) pluck(index);
-    beat = index;
+  const hours = (ra: number) => {
+    const minutes = Math.round((ra / 15) * 60) % 1440;
+    return `${String(Math.floor(minutes / 60)).padStart(2, "0")}h ${String(minutes % 60).padStart(2, "0")}m`;
+  };
+  const degrees = (dec: number) => {
+    const minutes = Math.round(Math.abs(dec) * 60);
+    return `${dec < 0 ? "−" : "+"}${Math.floor(minutes / 60)}° ${String(minutes % 60).padStart(2, "0")}′`;
+  };
+
+  let time = siderealTime(new Date());
+  let speed = REAL;
+  let listening = false;
+  /** The last step of the grid already played */
+  let played = Math.floor(time / GRID);
+  let last = performance.now();
+
+  /** Plays one step of the grid, `wait` seconds from now */
+  const step = (index: number, wait: number, now: number) => {
+    const at = (audio?.currentTime ?? 0) + wait;
+    const born = now + wait * 1000;
+    const hits = hitsAt(index);
+    const interval = bassAt(index);
+    for (const hit of hits) sound(hit, at);
+    if (interval !== null) pluck(interval, index * GRID, at);
 
     const LINES = lines();
-    // A line that was just moved would sweep up every star in between
-    const moved = LINES[1].west !== second;
-    second = LINES[1].west;
-    const heard = LINES.map(({ west }) =>
-      west && moved
-        ? []
-        : crossed(seen - west, time - west, span(west) - 90).sort(
-            (a, b) => a[2] - b[2],
-          ),
-    );
-    const notes = heard[0];
-    seen = time;
-    // Brightest first: play() decides which of them get a full note
-    heard.forEach((line, i) =>
-      line.slice(0, 6).forEach((star) => play(star, LINES[i].gain)),
-    );
-    heard.forEach((line, i) => {
-      for (const star of line.slice(0, 40)) {
-        rings.push({
-          ...along(LINES[i].west, 90 + star[1]),
-          born: now,
-          size: names.has(star) ? 46 : Math.max(3, 16 - star[2] * 2.2),
-          color: tint(star[3]),
-          named: names.has(star),
-        });
-      }
-    });
-    for (const star of notes) {
+    for (const { star, line, rank } of hits) {
+      rings.push({
+        ...along(LINES[line].west, 90 + star[1]),
+        born,
+        size: rank === "bells" ? 46 : Math.max(3, 16 - star[2] * 2.2),
+        color: tint(star[3]),
+        named: rank === "bells",
+      });
+    }
+    const first = hits.filter((hit) => hit.line === 0);
+    for (const { star } of first) {
       const name = names.get(star);
       const y = pole.y - (90 + star[1]) * perDegree;
       // Two names on the same spot would be unreadable: the first one stays
       if (name && !labels.some((label) => Math.abs(label.y - y) < 16)) {
-        labels.push({ name, y, born: now, crossed: time });
+        labels.push({ name, y, born, crossed: star[0] });
       }
     }
     // A named star stays in the readout until the next one
-    const told = notes.find((star) => names.has(star)) ?? notes[0];
+    const told = (first.find((hit) => hit.rank === "bells") ?? first[0])?.star;
     if (told && (names.has(told) || now - named > 6000)) {
       const [ra, dec, mag] = told;
       const name = names.get(told);
       if (name) named = now;
       readout.textContent = `${name ? `${name}, ` : ""}α ${hours(ra)}, δ ${degrees(dec)}, mag ${mag.toFixed(1)}`;
     }
+  };
+
+  /** Steps of the grid a roll shows ahead of now: two bars */
+  const WINDOW = 32;
+  const TINTS: Record<string, string> = {
+    bells: "232,239,251",
+    stars: "255,246,224",
+    dust: "157,180,255",
+    bass: "102,199,255",
+  };
+
+  const drawRolls = () => {
+    const current = time / GRID;
+    for (const { sheet, key, pen } of rolls) {
+      const [width, height] = [sheet.clientWidth, sheet.clientHeight];
+      const lead = width * 0.14;
+      const cell = (width - lead) / WINDOW;
+      pen.clearRect(0, 0, width, height);
+      // Beats along the bottom, bars from top to bottom
+      pen.fillStyle = "rgba(157,180,255,.14)";
+      for (let i = Math.ceil(current); i < current + WINDOW; i++) {
+        if (i % 4) continue;
+        const tall = i % 16 === 0;
+        pen.fillRect(
+          lead + (i - current) * cell,
+          tall ? 0 : height - 4,
+          1,
+          height,
+        );
+      }
+      for (let i = Math.floor(current) - 4; i < current + WINDOW; i++) {
+        const x = lead + (i - current) * cell;
+        // What has sounded fades out behind the playhead
+        const gone = current - i;
+        const alpha = gone > 0 ? Math.max(0, 1 - gone / 4) : 0.7;
+        if (key === "bass") {
+          const interval = bassAt(i);
+          if (interval === null) continue;
+          pen.fillStyle = `rgba(${TINTS.bass},${(alpha * (0.45 + 0.55 * glowAt(i * GRID))).toFixed(3)})`;
+          pen.fillRect(
+            x,
+            height - 7 - (interval / 12) * (height - 12),
+            cell * 3,
+            3,
+          );
+          continue;
+        }
+        for (const { star, line, rank } of hitsAt(i)) {
+          if (rank !== key) continue;
+          const size =
+            rank === "bells" ? 3.5 : rank === "dust" ? 1 : 3 - star[2] * 0.4;
+          pen.fillStyle = `rgba(${TINTS[key]},${(alpha * (line ? 0.5 : 1)).toFixed(3)})`;
+          pen.beginPath();
+          pen.arc(
+            x,
+            height - 4 - heightOf(star) * (height - 8),
+            Math.max(0.8, size),
+            0,
+            7,
+          );
+          pen.fill();
+        }
+      }
+      pen.fillStyle = "rgba(157,180,255,.55)";
+      pen.fillRect(lead, 0, 1, height);
+
+      if (key === "bells") {
+        // The next bell is often many bars away: say which, and how far
+        const limit = reach() - 90;
+        let next: [bars: number, name: string] | undefined;
+        for (const [star, name] of names) {
+          const turn = (((star[0] - time) % 360) + 360) % 360;
+          const bars = turn / BEAT / 4;
+          if (star[1] <= limit && (!next || bars < next[0])) {
+            next = [bars, name];
+          }
+        }
+        if (next && next[0] > 1) {
+          pen.font = 'italic 12px "STIX Two Text", serif';
+          pen.textAlign = "right";
+          pen.fillStyle = "rgba(168,178,196,.9)";
+          pen.fillText(
+            `${next[1]} in ${Math.round(next[0])} bars`,
+            width - 6,
+            height / 2 + 4,
+          );
+        }
+      }
+    }
+  };
+
+  const frame = (now: number) => {
+    const elapsed = Math.min(0.1, (now - last) / 1000);
+    last = now;
+    time += speed * elapsed;
+    // The sky keeps its real pace until someone listens: then a beat is a sidereal minute
+    const rest = listening ? (knob("tempo") / 60) * BEAT : REAL;
+    speed = rest + (speed - rest) * Math.exp(-elapsed / 1.5);
+    chart.style.rotate = `${(time - UP).toFixed(3)}deg`;
+
+    // Steps are scheduled a little ahead and sound exactly on the grid
+    const due = Math.floor((time + speed * AHEAD) / GRID);
+    // After a pause, such as a hidden tab, there is no catching up
+    if (due - played > 16) played = due - 1;
+    for (let index = played + 1; index <= due; index++) {
+      step(index, Math.max(0, (index * GRID - time) / speed), now);
+    }
+    played = due;
 
     pen.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
     pen.lineWidth = 1;
@@ -716,11 +917,13 @@ const SCALES = [
       pen.stroke();
     }
     pen.globalAlpha = 1;
-    labels = labels.filter((label) => time - label.crossed < TRAIL);
+    const turnedSince = (ra: number) => (((time - ra) % 360) + 360) % 360;
+    labels = labels.filter((label) => turnedSince(label.crossed) < TRAIL);
     pen.font = 'italic 15px "STIX Two Text", serif';
     for (const label of labels) {
+      if (now < label.born) continue;
       // The star has turned about the pole since it crossed
-      const turned = time - label.crossed;
+      const turned = turnedSince(label.crossed);
       const angle = (turned * Math.PI) / 180;
       const distance = pole.y - label.y;
       const shown = Math.min(
@@ -737,6 +940,7 @@ const SCALES = [
     }
     rings = rings.filter((ring) => now - ring.born < 1800);
     for (const ring of rings) {
+      if (now < ring.born) continue;
       const age = (now - ring.born) / 1800;
       pen.lineWidth = ring.named ? 2 : 1;
       pen.strokeStyle = `rgba(${ring.color},${(0.7 * (1 - age) ** 2).toFixed(3)})`;
@@ -750,14 +954,13 @@ const SCALES = [
       );
       pen.stroke();
     }
+    drawRolls();
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
 
   const listen = async (on: boolean) => {
-    if (on && !audio) {
-      wake();
-    }
+    if (on && !audio) wake();
     listening = on;
     await (on ? audio?.resume() : audio?.suspend());
     button.ariaPressed = String(on);
