@@ -1180,6 +1180,8 @@ const glow = (() => {
     bold: boolean;
   };
   let rings: Ring[] = [];
+  /** The type the names are set in */
+  const NAME_FONT = 'italic 15px "STIX Two Text", serif';
   /** How far past its line, in degrees, a star keeps its name */
   const TRAIL = 12;
   /** Names that follow their stars away from the line they crossed */
@@ -1218,14 +1220,21 @@ const glow = (() => {
         bold: band === "bells",
       });
       const name = names.get(star);
-      // Two names on the same spot would be unreadable: the first one stays
-      const taken = labels.some(
-        (label) =>
-          label.west === line.west &&
-          Math.abs(label.star[1] - star[1]) * perDegree < 16,
-      );
-      if (name && !taken)
-        labels.push({ name, star, west: line.west, born: now });
+      // Two names on the same spot would be unreadable: the first one stays.
+      // A name moves off with its star, so it is compared where it is now
+      if (!name) continue;
+      const spot = along(line.west, 90 + star[1]);
+      pen.font = NAME_FONT;
+      const width = (text: string) => pen.measureText(text).width + 8;
+      const taken = labels.some((label) => {
+        const there = along(past(label) + label.west, 90 + label.star[1]);
+        return (
+          Math.abs(there.y - spot.y) < 16 &&
+          there.x < spot.x + width(name) &&
+          spot.x < there.x + width(label.name)
+        );
+      });
+      if (!taken) labels.push({ name, star, west: line.west, born: now });
     }
     // The tune is drawn from the stars but has none of its own: it sounds on
     // the meridian at its pitch, and the bass from the pole
@@ -1383,7 +1392,7 @@ const glow = (() => {
     // A name goes once its star is well past its line, or when the sky has
     // jumped on, as it does after a while in a background tab
     labels = labels.filter((label) => past(label) > -1 && past(label) < TRAIL);
-    pen.font = 'italic 15px "STIX Two Text", serif';
+    pen.font = NAME_FONT;
     pen.fillStyle = PALE;
     for (const label of labels) {
       const turned = past(label);
