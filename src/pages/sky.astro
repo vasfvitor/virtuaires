@@ -9,11 +9,11 @@ const now = new Date();
 const BANDS = [
   ["bells", "Bells", "The stars with a name of their own", 1],
   ["stars", "Stars", "The stars down to magnitude 4.5", 1],
-  ["dust", "Dust", "Every fainter star", 1],
+  ["dust", "Dust", "Every fainter star", 0.6],
   [
     "bass",
     "Bass",
-    "Root from the last bell, beat from sidereal time, tone from the Milky Way",
+    "Chord from the last bell, beat from sidereal time, tone from the Milky Way",
     0.4,
   ],
 ] as const;
@@ -565,8 +565,8 @@ const glow = (() => {
     return hits;
   };
 
-  /** Semitones above the root on each beat of the bass's bar, or a rest */
-  const BAR = [0, null, 0, 7, 0, null, 12, 7];
+  /** The bass's bar, beat by beat: the chord's root (0), its top note (1), the root an octave up (2), or a rest */
+  const BAR = [0, null, 0, 1, 0, null, 2, 1];
   const bassAt = (step: number) =>
     step % 4 ? null : BAR[wrap(step / 4, BAR.length)];
 
@@ -648,32 +648,96 @@ const glow = (() => {
     tune();
   });
 
-  /** Semitones above A1 the bass sits on: the last bell's note */
+  // Harmony. Every voice shares one chord, and the bells move it: each bell
+  // puts the chord on the note of the scale its star falls on
+  /** The degree of the scale the chord stands on */
   let root = 0;
+  /** Semitones above A of a degree of the scale, counting on through the octaves */
+  const semitones = (degree: number) => {
+    const scale = currentScale();
+    return (
+      12 * Math.floor(degree / scale.length) + scale[wrap(degree, scale.length)]
+    );
+  };
+  /** The chord: its root in semitones above A, then the third and fifth above it that the scale allows */
+  const chord = () => {
+    const scale = currentScale();
+    const base = scale[wrap(root, scale.length)];
+    const has = (above: number) => scale.includes((base + above) % 12);
+    const above = [0, [4, 3].find(has), [7, 6, 8].find(has)];
+    return { base, above: above.filter((n) => n !== undefined) };
+  };
+  const inChord = (degree: number) => {
+    const { base, above } = chord();
+    return above.some((n) => (base + n) % 12 === wrap(semitones(degree), 12));
+  };
 
-  const sound = ({ star, line, rank }: Hit, at: number) => {
+  /**
+   * Each line sings one melody. A star does not pick its note outright: it
+   * moves the melody up or down the scale, by whether it crosses higher or
+   * lower than the star before it
+   */
+  const voices = [0, 1].map(() => ({ degree: 0, height: 0.5 }));
+  const melody = (line: Line, height: number, onBeat: boolean) => {
+    const size = currentScale().length;
+    const voice = voices[line.west ? 1 : 0];
+    const rise = Math.sign(height - voice.height) || 1;
+    const leap = Math.abs(height - voice.height) > 0.3 ? 2 : 1;
+    let degree = voice.degree + rise * leap;
+    // On the beat the melody lands on a note of the chord
+    for (let n = 0; onBeat && n < size && !inChord(degree); n++) degree += rise;
+    // Two octaves to sing in: at either end it turns back
+    const [low, high] = [size, size * 3];
+    if (degree > high) degree = 2 * high - degree;
+    if (degree < low) degree = 2 * low - degree;
+    voice.degree = Math.max(low, Math.min(high, degree));
+    voice.height = height;
+    return voice.degree;
+  };
+
+  const sound = ({ star, line, rank }: Hit, index: number, at: number) => {
     const height = heightOf(star);
     const scale = currentScale();
-    // Higher on the line is higher in pitch, over four octaves from A2
-    const step = Math.min(
-      scale.length * 4 - 1,
-      Math.floor(height * scale.length * 4),
-    );
-    const semitones =
-      12 * Math.floor(step / scale.length) + scale[step % scale.length];
-    // Cool red stars sound an octave lower and rounder, hot blue ones glassier
     const heat = colorClass(star[3]);
+    // Cool red stars sound rounder, hot blue ones glassier
     const [hot, warm] = [heat === 0, heat === 2];
-    const interval = CROSS[names.get(star) ?? ""];
-    const pitch =
-      interval === undefined
-        ? (warm ? 55 : 110) * 2 ** (semitones / 12)
-        : 220 * 2 ** (interval / 12);
+    // Each instrument keeps to its own register
+    let pitch: number;
+    if (rank === "bells") {
+      const interval = CROSS[names.get(star) ?? ""];
+      // The chord moves to where the bell's star crosses
+      root =
+        interval === undefined
+          ? Math.floor(height * scale.length * 2) % scale.length
+          : Math.max(0, scale.indexOf(interval % 12));
+      pitch =
+        interval === undefined
+          ? 110 * 2 ** (chord().base / 12)
+          : 220 * 2 ** (interval / 12);
+    } else if (rank === "stars") {
+      // The second line answers an octave above the first
+      const octave = line.west ? 220 : 110;
+      pitch =
+        octave * 2 ** (semitones(melody(line, height, index % 4 === 0)) / 12);
+    } else {
+      // Dust glints on the notes of the chord, high up
+      const { base, above } = chord();
+      pitch =
+        880 *
+        2 **
+          ((base +
+            above[
+              Math.min(above.length - 1, Math.floor(height * above.length))
+            ]) /
+            12);
+    }
     // A magnitude is a factor of about 2.5 in light; the ear gets a gentler curve
     const floor = { bells: 0.4, stars: 0.12, dust: 0 }[rank];
+    // Beats are stressed, the sixteenths between them are light
+    const stress = index % 4 === 0 ? 1.2 : index % 2 === 0 ? 0.9 : 0.6;
     const level =
       Math.max(floor, Math.min(0.9, 0.5 * 10 ** (-0.256 * star[2]))) *
-      (1 - height / 2) *
+      (rank === "bells" ? 1 : stress) *
       line.gain;
     const length =
       (0.8 + 4 * level) * knob("length") * (rank === "bells" ? 2 : 1);
@@ -693,7 +757,7 @@ const glow = (() => {
     };
 
     if (rank === "dust") {
-      tone(pitch * 2, level * 0.6, 0.18);
+      tone(pitch, level * 0.6, 0.18);
       return;
     }
     tone(pitch, level, length);
@@ -706,8 +770,6 @@ const glow = (() => {
       tone(pitch * 2, bell * 0.5, length * 0.7);
       tone(pitch * 3, bell * 0.3, length * 0.5);
       tone(pitch * 4.2, bell * 0.12, length * 0.25);
-      // The bass takes its root from the last bell
-      root = (interval ?? semitones) % 12;
       // The rest of the sky steps back, then returns as the bell fades
       under.gain.cancelScheduledValues(at);
       under.gain.setTargetAtTime(0.3, at, 0.03);
@@ -715,14 +777,17 @@ const glow = (() => {
     }
   };
 
-  // The bass line has three sources: its root is the last bell's note, its
+  // The bass line has three sources: it walks the chord the bells set, its
   // beat is sidereal time, and the Milky Way on the meridian opens its tone
-  const pluck = (interval: number, sidereal: number, at: number) => {
+  const pluck = (part: number, sidereal: number, at: number) => {
+    const { base, above } = chord();
+    // The root, the chord's highest note, or the root an octave up
+    const interval = [0, above.at(-1)!, 12][part];
     const voice = audio!.createOscillator();
     const muffle = audio!.createBiquadFilter();
     const loudness = audio!.createGain();
     voice.type = "sawtooth";
-    voice.frequency.value = 55 * 2 ** ((root + interval) / 12);
+    voice.frequency.value = 55 * 2 ** ((base + interval) / 12);
     muffle.frequency.value = 160 + 1500 * glowAt(sidereal);
     muffle.Q.value = 3;
     loudness.gain.setValueAtTime(0, at);
@@ -735,9 +800,13 @@ const glow = (() => {
 
   /** Sounds one step of the grid at the given time on the audio clock */
   const schedule = (index: number, at: number) => {
-    for (const hit of hitsAt(index)) sound(hit, at);
-    const interval = bassAt(index);
-    if (interval !== null) pluck(interval, index * GRID, at);
+    // Bells first: they set the chord the others play in
+    const hits = hitsAt(index);
+    for (const rank of ["bells", "stars", "dust"]) {
+      for (const hit of hits) if (hit.rank === rank) sound(hit, index, at);
+    }
+    const part = bassAt(index);
+    if (part !== null) pluck(part, index * GRID, at);
   };
 
   // Each note leaves a ring where its star crossed
@@ -792,12 +861,12 @@ const glow = (() => {
         labels.push({ name, star, west: line.west, born: now });
     }
     // The bass has no star of its own: it sounds from the pole the sky turns about
-    const interval = bassAt(index);
-    if (interval !== null) {
+    const part = bassAt(index);
+    if (part !== null) {
       rings.push({
         ...pole,
         born: now,
-        size: 22 + interval * 2.5,
+        size: 22 + part * 15,
         color: BASS,
         bold: false,
       });
@@ -843,15 +912,10 @@ const glow = (() => {
       const gone = current - i;
       const alpha = gone > 0 ? Math.max(0, 1 - gone / 4) : 0.7;
       if (key === "bass") {
-        const interval = bassAt(i);
-        if (interval === null) continue;
+        const part = bassAt(i);
+        if (part === null) continue;
         pen.globalAlpha = alpha * (0.45 + 0.55 * glowAt(i * GRID));
-        pen.fillRect(
-          x,
-          height - 7 - (interval / 12) * (height - 12),
-          cell * 3,
-          3,
-        );
+        pen.fillRect(x, height - 7 - (part / 2) * (height - 12), cell * 3, 3);
         continue;
       }
       for (const { star, line, rank } of hitsAt(i)) {
