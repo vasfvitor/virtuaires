@@ -1366,7 +1366,9 @@ const glow = (() => {
       pen.lineTo(end.x, end.y);
       pen.stroke();
     }
-    labels = labels.filter((label) => past(label) < TRAIL);
+    // A name goes once its star is well past its line, or when the sky has
+    // jumped on, as it does after a while in a background tab
+    labels = labels.filter((label) => past(label) > -1 && past(label) < TRAIL);
     pen.font = 'italic 15px "STIX Two Text", serif';
     pen.fillStyle = PALE;
     for (const label of labels) {
