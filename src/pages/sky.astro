@@ -677,22 +677,28 @@ const glow = (() => {
   };
 
   /**
-   * The stars that reach a line during one step: every named one, and the
-   * brightest of the rest
+   * The stars that reach a line during one step: the brightest of the
+   * unnamed ones, and, on a beat, every named star that crossed since the
+   * last one. A bell between beats would sound out of time
    */
   const hitsAt = (step: number) => {
     const known = score.get(step);
     if (known) return known;
     const hits: Hit[] = [];
     for (const line of lines) {
-      const found = crossed(
-        (step - 1) * GRID - line.west,
-        step * GRID - line.west,
-        span(line.west) - 90,
-      ).sort((a, b) => a[2] - b[2]);
-      for (const star of found.filter((star) => names.has(star))) {
-        hits.push({ star, line, band: "bells" });
+      const limit = span(line.west) - 90;
+      const since = (steps: number) =>
+        crossed(
+          (step - steps) * GRID - line.west,
+          step * GRID - line.west,
+          limit,
+        );
+      if (wrap(step, 4) === 0) {
+        for (const star of since(4).filter((star) => names.has(star))) {
+          hits.push({ star, line, band: "bells" });
+        }
       }
+      const found = since(1).sort((a, b) => a[2] - b[2]);
       const glint = found.find((star) => !names.has(star));
       if (glint) hits.push({ star: glint, line, band: "dust" });
     }
@@ -885,7 +891,7 @@ const glow = (() => {
     if (!pulse) return { kick: false, hat: undefined };
     const at = wrap(step, BAR);
     const kick =
-      at === 0 || at === 8 || (at === 6 && glowAt(step * GRID) > 0.5);
+      at === 0 || at === 8 || (at === 6 && glowAt(step * GRID) > 0.3);
     const star = hitsAt(step).find(
       (hit) => hit.band === "dust" && !hit.line.west,
     )?.star;
@@ -1040,8 +1046,8 @@ const glow = (() => {
     }
     // The rest of the sky steps back, then returns as the bell fades
     under.gain.cancelScheduledValues(at);
-    under.gain.setTargetAtTime(0.3, at, 0.03);
-    under.gain.setTargetAtTime(1, at + 0.5, 0.9);
+    under.gain.setTargetAtTime(0.65, at, 0.03);
+    under.gain.setTargetAtTime(1, at + 0.3, 0.5);
   };
 
   /** A glint: a short high note of the chord, chosen by how high its star crosses */
@@ -1090,7 +1096,7 @@ const glow = (() => {
     const out = strike("bass", at, 0.8, 0.008, 0.5);
     voice("sine", pitch, at, 0.5).connect(out);
     const edge = audio!.createBiquadFilter();
-    edge.frequency.value = 200 + 1500 * glowAt(step * GRID);
+    edge.frequency.value = 200 + 2500 * glowAt(step * GRID);
     edge.Q.value = 2;
     const share = audio!.createGain();
     share.gain.value = 0.5;
@@ -1422,11 +1428,42 @@ const glow = (() => {
   /** When the canvases were last drawn, and the chart's angle as last written */
   let drawn = 0;
   let written = "";
+  /** A quick turn of the sky to where the song starts, when there is one under way */
+  let travel: { from: number; to: number; start: number } | undefined;
+  /** How long that turn takes, in milliseconds */
+  const TRAVEL = 3000;
+
+  /**
+   * Where the song starts: now, if the Milky Way is on the meridian or near,
+   * and otherwise a little before it rises there, at Orion, so the bright
+   * stars and the galaxy arrive within the first sections
+   */
+  const startAt = () => {
+    const near = (ra: number) => glowAt(ra) >= 0.2;
+    for (let turn = 0; turn < 360; turn += 2) {
+      if (near(time + turn)) {
+        return turn <= 24 ? time : time + turn - 20;
+      }
+    }
+    return time;
+  };
 
   const frame = (now: number) => {
     const elapsed = Math.min(0.1, (now - last) / 1000);
     last = now;
-    if (listening) {
+    if (travel) {
+      // The turn eases in and out, and nothing sounds or rings on the way
+      const k = calm ? 1 : Math.min(1, (now - travel.start) / TRAVEL);
+      const ease = k < 0.5 ? 4 * k ** 3 : 1 - (-2 * k + 2) ** 3 / 2;
+      time = travel.from + (travel.to - travel.from) * ease;
+      ahead = time - realTime();
+      played = shown = Math.floor(time / GRID);
+      if (k === 1) {
+        travel = undefined;
+        origin = (Math.floor(played / BAR) + 1) * BAR;
+        forget();
+      }
+    } else if (listening) {
       time += speed * elapsed;
       ahead = time - realTime();
     } else {
@@ -1434,7 +1471,7 @@ const glow = (() => {
       time = realTime() + ahead;
     }
     // The sky keeps its real pace until someone listens: then a beat is a sidereal minute
-    const rest = listening ? (knob("tempo") / 60) * BEAT : REAL;
+    const rest = listening && !travel ? (knob("tempo") / 60) * BEAT : REAL;
     speed = rest + (speed - rest) * Math.exp(-elapsed / 1.5);
     const angle = `${(time - UP).toFixed(3)}deg`;
     if (angle !== written) chart.style.rotate = written = angle;
@@ -1471,8 +1508,13 @@ const glow = (() => {
   const listen = async (on: boolean) => {
     if (on && !audio) {
       wake();
-      origin = (Math.floor(played / BAR) + 1) * BAR;
-      forget();
+      const to = startAt();
+      if (to === time) {
+        origin = (Math.floor(played / BAR) + 1) * BAR;
+        forget();
+      } else {
+        travel = { from: time, to, start: performance.now() };
+      }
     }
     listening = on;
     await (on ? audio?.resume() : audio?.suspend());
