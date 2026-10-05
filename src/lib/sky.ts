@@ -36,6 +36,7 @@ export const wrap = (n: number, size = 360) => ((n % size) + size) % size;
 const SYNODIC = 29.530588853;
 
 const julianDate = (date: Date) => date.getTime() / 86_400_000 + 2440587.5;
+const fromJulian = (jd: number) => new Date((jd - 2440587.5) * 86_400_000);
 
 /** Local sidereal time in degrees: the right ascension on the meridian */
 export const siderealTime = (date: Date) => {
@@ -191,10 +192,9 @@ const sunTimes = (date: Date) => {
         (Math.sin(-0.833 * rad) - Math.sin(lat) * Math.sin(declination)) /
           (Math.cos(lat) * Math.cos(declination)),
       ) / rad;
-    const toDate = (jd: number) => new Date((jd - 2440587.5) * 86_400_000);
     return {
-      rise: toDate(transit - half / 360),
-      set: toDate(transit + half / 360),
+      rise: fromJulian(transit - half / 360),
+      set: fromJulian(transit + half / 360),
     };
   };
   return { sunset: at(0).set, sunrise: at(1).rise };
@@ -233,7 +233,7 @@ const nextPhase = (date: Date, full: boolean) => {
       0.00024 * e * Math.sin(2 * moon - sun) -
       0.00017 * Math.sin(omega);
     const jd = 2451550.09766 + SYNODIC * k + 0.00015437 * t * t + terms;
-    if (jd > now) return new Date((jd - 2440587.5) * 86_400_000);
+    if (jd > now) return fromJulian(jd);
   }
 };
 
@@ -254,8 +254,10 @@ export const skyFacts = (date: Date, catalogue: Star[], reader?: string) => {
   const moment = (when: Date) =>
     `${format(when, theirs, { day: "numeric", month: "long" })}, ${format(when, theirs, clock)} ${reader ? "your time" : "UTC"}`;
 
-  const phase = moonPhase(date);
-  const age = (date.getTime() - lunation(date).last.getTime()) / 86_400_000;
+  const { last, next: following } = lunation(date);
+  const phase =
+    (date.getTime() - last.getTime()) / (following.getTime() - last.getTime());
+  const age = (date.getTime() - last.getTime()) / 86_400_000;
   const up = (ra: number, dec: number) => altitude(ra, dec, date) > 0;
   const named = NAMED.filter(([ra, dec]) => up(ra, dec)).map(
     ([, , name]) => name,

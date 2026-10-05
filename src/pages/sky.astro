@@ -60,7 +60,7 @@ const schema = {
 
 /** The instruments: key, name, what plays it and starting level */
 const BANDS = [
-  ["bells", "Bells", "The 31 brightest stars. Each one sets the chord", 1],
+  ["bells", "Bells", "31 named stars. Each one sets the chord", 1],
   [
     "stars",
     "Tune",
@@ -241,8 +241,8 @@ const glow = (() => {
       <h2>How it plays</h2>
       <p>
         The sky keeps the time: one beat is one sidereal minute. Stars play as
-        they cross the lines. The 31 brightest ring as bells and change the
-        chord; the rest play the hi-hat and soft notes.
+        they cross the lines. 31 named ones ring as bells and change the chord;
+        the rest play the hi-hat and soft notes.
       </p>
       <p>
         The melody comes from the stars at the start of each section and
@@ -467,7 +467,6 @@ const glow = (() => {
     UP,
     colorClass,
     litShare,
-    moonLabel,
     moonPhase,
     siderealTime,
     skyFacts,
@@ -515,7 +514,7 @@ const glow = (() => {
 
   /**
    * The Southern Cross always plays the same open fifths, in semitones above
-   * A3 from its foot to its head, whatever scale the Moon has picked
+   * A4 from its foot to its head, whatever scale the Moon has picked
    */
   const CROSS: Record<string, number> = {
     Acrux: 0,
@@ -555,12 +554,13 @@ const glow = (() => {
   // brought up to date, and kept so
   const today = () => {
     const date = new Date();
-    document.querySelector(".phase")!.textContent = moonLabel(moonPhase(date));
     const facts = skyFacts(
       date,
       stars,
       Intl.DateTimeFormat().resolvedOptions().timeZone,
     );
+    document.querySelector(".phase")!.textContent =
+      `${facts.phase}, ${facts.lit} lit`;
     for (const fact of document.querySelectorAll<HTMLElement>("[data-fact]")) {
       fact.textContent = facts[fact.dataset.fact as keyof typeof facts];
     }
@@ -768,7 +768,8 @@ const glow = (() => {
     const round = currentScale().length > 5 ? [0, 4, 5, 3] : [0, 3, 4, 2];
     let chord = round[barOf(step)];
     // A bell's chord holds from its bar to the end of the phrase
-    for (let i = (bar - barOf(step)) * BAR; i < (bar + 1) * BAR; i++) {
+    // Bells only fall on eighth notes
+    for (let i = (bar - barOf(step)) * BAR; i < (bar + 1) * BAR; i += 2) {
       const bell = hitsAt(i).find(
         (hit) => hit.band === "bells" && !hit.line.west,
       );
@@ -1028,11 +1029,13 @@ const glow = (() => {
 
   /** A bell: its star's own chord note, with the overtones of a struck bar */
   const ring = ({ star, line }: Hit, step: number, at: number) => {
-    // On the meridian a bell sounds its own note, the one the chord moved to;
-    // on the second line, where it moves nothing, it sounds the chord's
-    const interval = line.west ? undefined : CROSS[names.get(star) ?? ""];
-    const root = line.west ? chordAt(step) : bellDegree(star);
-    const pitch = 440 * 2 ** ((interval ?? pitchClass(root)) / 12);
+    // A bell sounds its own note when it belongs to the bar's chord, as it
+    // does unless another bell moved the chord later in the bar, or the bell
+    // is on the second line, where it moves nothing. Otherwise the chord's root
+    const own = CROSS[names.get(star) ?? ""] ?? pitchClass(bellDegree(star));
+    const tones = chordTones(chordAt(step)).map(pitchClass);
+    const fits = !line.west && tones.includes(own % 12);
+    const pitch = 440 * 2 ** ((fits ? own : tones[0]) / 12);
     const level = Math.max(0.3, loudness(star)) * line.gain * 0.8;
     const length = 2.5 * knob("length");
     // Whole-number overtones, so it rings in tune with everything else
@@ -1224,7 +1227,10 @@ const glow = (() => {
       const spot = along(line.west, 90 + star[1]);
       pen.font = NAME_FONT;
       const width = (text: string) => pen.measureText(text).width + 8;
-      const taken = labels.some((label) => {
+      const live = labels.filter(
+        (label) => past(label) > -1 && past(label) < TRAIL - 2,
+      );
+      const taken = live.some((label) => {
         const there = along(past(label) + label.west, 90 + label.star[1]);
         return (
           Math.abs(there.y - spot.y) < 16 &&
@@ -1435,6 +1441,11 @@ const glow = (() => {
   /** When the canvases were last drawn, and the chart's angle as last written */
   let drawn = 0;
   let written = "";
+  /** The song starts at the next bar line, with everything worked out afresh */
+  const begin = () => {
+    origin = (Math.floor(played / BAR) + 1) * BAR;
+    forget();
+  };
   /** A quick turn of the sky to where the song starts, when there is one under way */
   let travel: { from: number; to: number; start: number } | undefined;
   /** How long that turn takes, in milliseconds */
@@ -1467,8 +1478,7 @@ const glow = (() => {
       played = shown = Math.floor(time / GRID);
       if (k === 1) {
         travel = undefined;
-        origin = (Math.floor(played / BAR) + 1) * BAR;
-        forget();
+        begin();
       }
     } else if (listening) {
       time += speed * elapsed;
@@ -1489,7 +1499,7 @@ const glow = (() => {
     if (due - played > 16) played = due - 1;
     while (played < due) {
       played++;
-      if (audio?.state === "running") {
+      if (audio?.state === "running" && !travel) {
         const wait = Math.max(0, (played * GRID - time) / speed);
         schedule(played, audio.currentTime + wait);
       }
@@ -1517,8 +1527,7 @@ const glow = (() => {
       wake();
       const to = startAt();
       if (to === time) {
-        origin = (Math.floor(played / BAR) + 1) * BAR;
-        forget();
+        begin();
       } else {
         travel = { from: time, to, start: performance.now() };
       }
