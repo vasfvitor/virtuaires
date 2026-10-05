@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "@components/Layout/BaseLayout.astro";
-import { UP, moonLabel, moonPhase, siderealTime } from "../lib/sky";
+import milkyWay from "../data/milkyway.json";
+import { moonLabel, moonPhase, skyAngle } from "../lib/sky";
 
 const now = new Date();
 
@@ -36,14 +37,50 @@ const PRESETS = {
   "Bells only": { stars: 0, dust: 0, bass: 0 },
   Rain: { tempo: 132, length: 0.4, repeats: 0.25 },
 };
+/** One scale per stretch of the lunar month, from the full Moon's to the new Moon's */
 const SCALES = [
-  "Lydian",
-  "Major",
-  "Suspended",
-  "Minor",
-  "Hirajoshi",
-  "Phrygian",
-];
+  ["Lydian", [0, 2, 4, 6, 7, 9, 11]],
+  ["Major", [0, 2, 4, 7, 9]],
+  ["Suspended", [0, 2, 5, 7, 10]],
+  ["Minor", [0, 3, 5, 7, 10]],
+  ["Hirajoshi", [0, 2, 3, 7, 8]],
+  ["Phrygian", [0, 1, 5, 7, 8]],
+] as const;
+
+/** How much of the Milky Way lies on the meridian at every other degree of sidereal time, 0 to 1 */
+const glow = (() => {
+  const flat = (ra: number, dec: number) => {
+    const angle = (ra * Math.PI) / 180;
+    return [(90 + dec) * Math.sin(angle), (90 + dec) * Math.cos(angle)];
+  };
+  // The brightness levels are nested: a point counts once for each it is in
+  const levels = (milkyWay as [number, number][][][]).map((rings) =>
+    rings.map((ring) => ring.map(([ra, dec]) => flat(ra, dec))),
+  );
+  const holds = (ring: number[][], x: number, y: number) => {
+    let odd = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [xi, yi] = ring[i];
+      const [xj, yj] = ring[j];
+      if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
+        odd = !odd;
+      }
+    }
+    return odd;
+  };
+  const totals = Array.from({ length: 180 }, (_, i) => {
+    let total = 0;
+    for (let dec = -85; dec <= 20; dec += 5) {
+      const [x, y] = flat(i * 2, dec);
+      for (const rings of levels) {
+        total += rings.filter((ring) => holds(ring, x, y)).length % 2;
+      }
+    }
+    return total;
+  });
+  const most = Math.max(...totals);
+  return totals.map((total) => Number((total / most).toFixed(2)));
+})();
 ---
 
 <BaseLayout
@@ -55,16 +92,20 @@ const SCALES = [
   <div
     class="chart"
     aria-hidden="true"
-    style={`rotate: ${(siderealTime(now) - UP).toFixed(2)}deg`}
+    style={`rotate: ${skyAngle(now)}deg`}
   ></div>
-  <canvas class="stage" aria-hidden="true"></canvas>
+  <canvas
+    class="stage"
+    aria-hidden="true"
+    data-glow={JSON.stringify(glow)}
+  ></canvas>
   <main>
     <h1>The southern sky</h1>
     <button type="button" aria-pressed="false">
       Listen
     </button>
     <p class="readout">
-      <span class="moon">{moonLabel(moonPhase(now))}</span>
+      {moonLabel(moonPhase(now))}
       <br />
       <span class="star">&nbsp;</span>
     </p>
@@ -121,8 +162,8 @@ const SCALES = [
           <span>Scale</span>
           <select name="scale">
             <option value="">The Moon's</option>
-            {SCALES.map((name, i) => (
-              <option value={i}>{name}</option>
+            {SCALES.map(([name, notes]) => (
+              <option value={notes.join(" ")}>{name}</option>
             ))}
           </select>
         </label>
@@ -173,13 +214,6 @@ const SCALES = [
     text-align: left;
   }
 
-  p {
-    max-width: 22rem;
-    margin-top: 0.5rem;
-    font-style: italic;
-    color: var(--muted);
-  }
-
   button {
     margin-top: 1rem;
     padding: 0.15rem 0.9rem;
@@ -201,9 +235,10 @@ const SCALES = [
   }
 
   .readout {
+    margin-top: 0.5rem;
     font-size: 0.8rem;
-    font-style: normal;
     font-variant-numeric: tabular-nums;
+    color: var(--muted);
   }
 
   details,
@@ -273,23 +308,41 @@ const SCALES = [
     font-variant-numeric: tabular-nums;
     text-align: right;
   }
+
+  @media print {
+    .chart,
+    .stage {
+      display: none;
+    }
+  }
 </style>
 
 <script>
   import catalogue from "../data/stars.json";
-  import milkyWay from "../data/milkyway.json";
-  import { UP, moonPhase, siderealTime } from "../lib/sky";
+  import {
+    COLORS,
+    LIMIT,
+    TURN,
+    UP,
+    colorClass,
+    litShare,
+    moonPhase,
+    siderealTime,
+    wrap,
+    type Star,
+  } from "../lib/sky";
 
-  type Star = [ra: number, dec: number, mag: number, bv: number | null];
   type Rank = "bells" | "stars" | "dust";
-  /** A star reaching a line: which line, and which instrument it plays */
-  type Hit = { star: Star; line: number; rank: Rank };
+  /** A line the stars play on: degrees west of the meridian, and how loud */
+  type Line = { west: number; gain: number };
+  /** A star reaching a line, and the instrument it plays there */
+  type Hit = { star: Star; line: Line; rank: Rank };
 
   /** Sorted by right ascension, the order in which the stars reach the line */
   const stars = [...(catalogue as Star[])].sort((a, b) => a[0] - b[0]);
 
   /** Degrees per second the real sky turns */
-  const REAL = 360.98564736629 / 86_400;
+  const REAL = TURN / 86_400;
   /** Degrees of turn per beat: a quarter of a degree is one sidereal minute */
   const BEAT = 0.25;
   /** Everything sounds on a grid of sixteenth notes */
@@ -298,8 +351,13 @@ const SCALES = [
   const AHEAD = 0.12;
   /** Faintest magnitude that still plays a full note; the rest are dust */
   const CLEAR = 4.5;
-  /** Degrees across the whole chart, see sky.svg.ts */
-  const SPAN = 260;
+  /** Degrees across the whole chart */
+  const SPAN = (90 + LIMIT) * 2;
+
+  /** The colours drawn over the sky */
+  const RULE = "rgb(157 180 255)";
+  const PALE = "rgb(232 239 251)";
+  const BASS = "rgb(102 199 255)";
 
   /** The stars with a name of their own, by right ascension and declination */
   const NAMES: [ra: number, dec: number, name: string][] = [
@@ -352,18 +410,6 @@ const SCALES = [
     Gacrux: 19,
   };
 
-  /** One scale per stretch of the lunar month, from the full Moon's to the new Moon's */
-  const SCALES = [
-    [0, 2, 4, 6, 7, 9, 11],
-    [0, 2, 4, 7, 9],
-    [0, 2, 5, 7, 10],
-    [0, 3, 5, 7, 10],
-    [0, 2, 3, 7, 8],
-    [0, 1, 5, 7, 8],
-  ];
-  const lit = (1 - Math.cos(2 * Math.PI * moonPhase(new Date()))) / 2;
-  const moonScale = Math.round((1 - lit) * (SCALES.length - 1));
-
   // The controls
   const main = document.querySelector("main")!;
   const picker = main.querySelector<HTMLSelectElement>("[name=scale]")!;
@@ -374,8 +420,17 @@ const SCALES = [
     ),
   );
   const knob = (name: string) => knobs[name].valueAsNumber;
+
+  /** The scales on offer, brightest first; the Moon picks one by how much of it is lit */
+  const scales = [...picker.options]
+    .filter((option) => option.value)
+    .map((option) => option.value.split(" ").map(Number));
+  const moonScale =
+    scales[
+      Math.round((1 - litShare(moonPhase(new Date()))) * (scales.length - 1))
+    ];
   const currentScale = () =>
-    SCALES[picker.value === "" ? moonScale : Number(picker.value)];
+    picker.value ? scales[picker.selectedIndex - 1] : moonScale;
 
   const chart = document.querySelector<HTMLElement>(".chart")!;
   const canvas = document.querySelector<HTMLCanvasElement>(".stage")!;
@@ -383,6 +438,9 @@ const SCALES = [
   const button = document.querySelector<HTMLButtonElement>("main > button")!;
   const readout = document.querySelector<HTMLElement>(".star")!;
   const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  /** How much of the Milky Way lies on the meridian at every other degree, 0 to 1 */
+  const glow: number[] = JSON.parse(canvas.dataset.glow!);
+  const glowAt = (sidereal: number) => glow[Math.floor(wrap(sidereal) / 2)];
   /** One small window per instrument, showing what it is about to play */
   const rolls = [
     ...main.querySelectorAll<HTMLCanvasElement>("[data-roll]"),
@@ -390,17 +448,48 @@ const SCALES = [
     sheet,
     key: sheet.dataset.roll!,
     pen: sheet.getContext("2d")!,
+    width: 0,
+    height: 0,
   }));
+  const stage = { sheet: canvas, pen, width: 0, height: 0 };
+
+  /** What crosses the lines on each step of the grid, worked out once */
+  const score = new Map<number, Hit[]>();
 
   /**
    * The lines the stars play on: the meridian, and a second one the same
-   * stars reach a little later, where they sound again more quietly.
-   * Each is so many degrees west of the meridian
+   * stars reach a little later, where they sound again more quietly
    */
-  const lines = () => [
-    { west: 0, gain: 1 },
-    { west: knob("line"), gain: 0.55 },
-  ];
+  let lines: Line[] = [];
+  const draft = () => {
+    lines = [
+      { west: 0, gain: 1 },
+      { west: knob("line"), gain: 0.55 },
+    ];
+    score.clear();
+  };
+
+  // The lines run from the pole to the edge of the window
+  let pole = { x: 0, y: 0 };
+  let perDegree = 1;
+  const measure = () => {
+    const ratio = devicePixelRatio;
+    for (const each of [stage, ...rolls]) {
+      each.width = each.sheet.clientWidth;
+      each.height = each.sheet.clientHeight;
+      each.sheet.width = each.width * ratio;
+      each.sheet.height = each.height * ratio;
+      each.pen.setTransform(ratio, 0, 0, ratio, 0, 0);
+    }
+    // Measured on the chart itself: turning it does not move its centre
+    const box = chart.getBoundingClientRect();
+    pole = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    perDegree = chart.offsetWidth / SPAN;
+    draft();
+  };
+  measure();
+  addEventListener("resize", measure);
+
   /** Where a point so many degrees from the pole along a line falls on screen */
   const along = (west: number, distance: number) => {
     const angle = (west * Math.PI) / 180;
@@ -412,41 +501,15 @@ const SCALES = [
   /** How many degrees from the pole a line runs before it leaves the window */
   const span = (west: number) => {
     const angle = (west * Math.PI) / 180;
-    const side = (canvas.clientWidth - pole.x) / Math.sin(angle);
+    const side = (stage.width - pole.x) / Math.sin(angle);
     return (
       Math.min(pole.y / Math.cos(angle), west ? side : Infinity) / perDegree
     );
   };
 
-  /** What crosses the lines on each step of the grid, worked out once */
-  const score = new Map<number, Hit[]>();
-
-  // The lines run from the pole to the edge of the window
-  let pole = { x: 0, y: 0 };
-  let perDegree = 1;
-  const measure = () => {
-    const ratio = devicePixelRatio;
-    for (const each of [{ sheet: canvas, pen }, ...rolls]) {
-      each.sheet.width = each.sheet.clientWidth * ratio;
-      each.sheet.height = each.sheet.clientHeight * ratio;
-      each.pen.setTransform(ratio, 0, 0, ratio, 0, 0);
-    }
-    // Measured on the chart itself: turning it does not move its centre
-    const box = chart.getBoundingClientRect();
-    pole = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-    perDegree = chart.offsetWidth / SPAN;
-    score.clear();
-  };
-  measure();
-  addEventListener("resize", measure);
-
-  /** How many degrees of declination the meridian covers, from the pole up */
-  const reach = () => pole.y / perDegree;
-
   /** The stars whose right ascension lies between two sidereal times, up to a declination */
   const crossed = (from: number, to: number, limit: number) => {
     const found: Star[] = [];
-    const wrap = (n: number) => ((n % 360) + 360) % 360;
     const [a, b] = [wrap(from), wrap(to)];
     const first = (ra: number) => {
       let [i, j] = [0, stars.length];
@@ -478,24 +541,25 @@ const SCALES = [
     const known = score.get(step);
     if (known) return known;
     const hits: Hit[] = [];
-    lines().forEach(({ west }, line) => {
+    for (const line of lines) {
       const found = crossed(
-        (step - 1) * GRID - west,
-        step * GRID - west,
-        span(west) - 90,
+        (step - 1) * GRID - line.west,
+        step * GRID - line.west,
+        span(line.west) - 90,
       ).sort((a, b) => a[2] - b[2]);
-      const taken = new Set<Rank>();
+      let [note, tick] = [false, false];
       for (const star of found) {
-        const rank: Rank = names.has(star)
-          ? "bells"
-          : star[2] <= CLEAR && !taken.has("stars")
-            ? "stars"
-            : "dust";
-        if (rank !== "bells" && taken.has(rank)) continue;
-        taken.add(rank);
-        hits.push({ star, line, rank });
+        if (names.has(star)) {
+          hits.push({ star, line, rank: "bells" });
+        } else if (star[2] <= CLEAR && !note) {
+          note = true;
+          hits.push({ star, line, rank: "stars" });
+        } else if (!tick) {
+          tick = true;
+          hits.push({ star, line, rank: "dust" });
+        }
       }
-    });
+    }
     if (score.size > 600) score.clear();
     score.set(step, hits);
     return hits;
@@ -504,12 +568,10 @@ const SCALES = [
   /** Semitones above the root on each beat of the bass's bar, or a rest */
   const BAR = [0, null, 0, 7, 0, null, 12, 7];
   const bassAt = (step: number) =>
-    step % 4
-      ? null
-      : BAR[(((step / 4) % BAR.length) + BAR.length) % BAR.length];
+    step % 4 ? null : BAR[wrap(step / 4, BAR.length)];
 
   /** How high on the meridian a star crosses, 0 at the pole and 1 at the top */
-  const heightOf = (star: Star) => Math.min(1, (90 + star[1]) / reach());
+  const heightOf = (star: Star) => Math.min(1, (90 + star[1]) / span(0));
 
   // Sound
   let audio: AudioContext | undefined;
@@ -517,9 +579,12 @@ const SCALES = [
   let outs: Record<Rank | "bass", GainNode>;
   /** Everything but the bells: it steps back while one of them rings */
   let under: GainNode;
-  let delay: DelayNode | undefined;
-  /** What each control drives, once there is sound */
+  let delay: DelayNode;
+  /** What each control drives */
   let dials: Record<string, AudioParam> = {};
+
+  /** The echo answers half a beat later, whatever the tempo */
+  const echoGap = () => Math.min(1, 30 / knob("tempo"));
 
   const wake = () => {
     audio = new AudioContext();
@@ -546,7 +611,6 @@ const SCALES = [
     bus.connect(delay).connect(damp).connect(again).connect(delay);
     damp.connect(wet).connect(limiter);
     limiter.connect(audio.destination);
-    survey();
     dials = {
       volume: bus.gain,
       echo: wet.gain,
@@ -558,33 +622,29 @@ const SCALES = [
       bass: outs.bass.gain,
     };
     for (const name in dials) dials[name].value = knob(name);
-    tune();
+    delay.delayTime.value = echoGap();
   };
 
   const tune = () => {
     for (const input of Object.values(knobs)) {
       const shown = input.nextElementSibling;
       if (shown) shown.textContent = input.value;
-      dials[input.name]?.setTargetAtTime(
-        input.valueAsNumber,
-        audio!.currentTime,
-        0.05,
-      );
     }
-    // The echo answers half a beat later, whatever the tempo
-    delay?.delayTime.setTargetAtTime(
-      Math.min(1, 30 / knob("tempo")),
-      audio!.currentTime,
-      0.05,
-    );
-    score.clear();
+    if (!audio) return;
+    const at = audio.currentTime;
+    for (const name in dials) dials[name].setTargetAtTime(knob(name), at, 0.05);
+    delay.delayTime.setTargetAtTime(echoGap(), at, 0.05);
   };
-  main.addEventListener("input", tune);
+  main.addEventListener("input", (event) => {
+    if ((event.target as HTMLInputElement).name === "line") draft();
+    tune();
+  });
   presets.addEventListener("change", () => {
     const values = JSON.parse(presets.value);
     for (const input of Object.values(knobs)) {
       input.value = values[input.name] ?? input.defaultValue;
     }
+    draft();
     tune();
   });
 
@@ -592,8 +652,6 @@ const SCALES = [
   let root = 0;
 
   const sound = ({ star, line, rank }: Hit, at: number) => {
-    if (!audio || audio.state !== "running") return;
-    const [, , mag, bv] = star;
     const height = heightOf(star);
     const scale = currentScale();
     // Higher on the line is higher in pitch, over four octaves from A2
@@ -604,8 +662,8 @@ const SCALES = [
     const semitones =
       12 * Math.floor(step / scale.length) + scale[step % scale.length];
     // Cool red stars sound an octave lower and rounder, hot blue ones glassier
-    const warm = (bv ?? 0.65) > 1;
-    const hot = (bv ?? 0.65) < 0.3;
+    const heat = colorClass(star[3]);
+    const [hot, warm] = [heat === 0, heat === 2];
     const interval = CROSS[names.get(star) ?? ""];
     const pitch =
       interval === undefined
@@ -614,9 +672,9 @@ const SCALES = [
     // A magnitude is a factor of about 2.5 in light; the ear gets a gentler curve
     const floor = { bells: 0.4, stars: 0.12, dust: 0 }[rank];
     const level =
-      Math.max(floor, Math.min(0.9, 0.5 * 10 ** (-0.256 * mag))) *
+      Math.max(floor, Math.min(0.9, 0.5 * 10 ** (-0.256 * star[2]))) *
       (1 - height / 2) *
-      lines()[line].gain;
+      line.gain;
     const length =
       (0.8 + 4 * level) * knob("length") * (rank === "bells" ? 2 : 1);
 
@@ -657,50 +715,12 @@ const SCALES = [
     }
   };
 
-  /** How much of the Milky Way lies on the meridian at every other degree, 0 to 1 */
-  let glow: number[] = [];
-  const survey = () => {
-    const flat = (ra: number, dec: number) => {
-      const angle = (ra * Math.PI) / 180;
-      return [(90 + dec) * Math.sin(angle), (90 + dec) * Math.cos(angle)];
-    };
-    const levels = (milkyWay as [number, number][][][]).map((rings) =>
-      rings.map((ring) => ring.map(([ra, dec]) => flat(ra, dec))),
-    );
-    const holds = (ring: number[][], x: number, y: number) => {
-      let odd = false;
-      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-        const [xi, yi] = ring[i];
-        const [xj, yj] = ring[j];
-        if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
-          odd = !odd;
-        }
-      }
-      return odd;
-    };
-    const totals = Array.from({ length: 180 }, (_, i) => {
-      let total = 0;
-      for (let dec = -85; dec <= 20; dec += 5) {
-        const [x, y] = flat(i * 2, dec);
-        for (const rings of levels) {
-          total += rings.filter((ring) => holds(ring, x, y)).length % 2;
-        }
-      }
-      return total;
-    });
-    const most = Math.max(...totals);
-    glow = totals.map((total) => total / most);
-  };
-  const glowAt = (sidereal: number) =>
-    glow[Math.floor((((sidereal % 360) + 360) % 360) / 2)] ?? 0;
-
   // The bass line has three sources: its root is the last bell's note, its
   // beat is sidereal time, and the Milky Way on the meridian opens its tone
   const pluck = (interval: number, sidereal: number, at: number) => {
-    if (!audio || audio.state !== "running") return;
-    const voice = audio.createOscillator();
-    const muffle = audio.createBiquadFilter();
-    const loudness = audio.createGain();
+    const voice = audio!.createOscillator();
+    const muffle = audio!.createBiquadFilter();
+    const loudness = audio!.createGain();
     voice.type = "sawtooth";
     voice.frequency.value = 55 * 2 ** ((root + interval) / 12);
     muffle.frequency.value = 160 + 1500 * glowAt(sidereal);
@@ -713,8 +733,12 @@ const SCALES = [
     voice.stop(at + 0.55);
   };
 
-  /** The bass's colour, on the sky and in its strip */
-  const BASS = "102,199,255";
+  /** Sounds one step of the grid at the given time on the audio clock */
+  const schedule = (index: number, at: number) => {
+    for (const hit of hitsAt(index)) sound(hit, at);
+    const interval = bassAt(index);
+    if (interval !== null) pluck(interval, index * GRID, at);
+  };
 
   // Each note leaves a ring where its star crossed
   type Ring = {
@@ -723,245 +747,184 @@ const SCALES = [
     born: number;
     size: number;
     color: string;
-    named: boolean;
+    bold: boolean;
   };
   let rings: Ring[] = [];
-  /** How far past the line, in degrees, a star keeps its name */
+  /** How far past its line, in degrees, a star keeps its name */
   const TRAIL = 12;
-  /** Names that follow their stars away from the line */
-  let labels: {
-    name: string;
-    y: number;
-    born: number;
-    crossed: number;
-    west: number;
-  }[] = [];
+  /** Names that follow their stars away from the line they crossed */
+  type Label = { name: string; star: Star; west: number; born: number };
+  let labels: Label[] = [];
+  /** Degrees a named star has turned since it crossed its line */
+  const past = (label: Label) =>
+    wrap(time - label.star[0] - label.west + 180) - 180;
   /** When a named star last took the readout */
   let named = -Infinity;
-  const tint = (bv: number | null) =>
-    (bv ?? 0.65) < 0.3
-      ? "207,220,255"
-      : (bv ?? 0.65) > 1
-        ? "255,207,135"
-        : "255,246,224";
 
-  const hours = (ra: number) => {
+  const asHours = (ra: number) => {
     const minutes = Math.round((ra / 15) * 60) % 1440;
     return `${String(Math.floor(minutes / 60)).padStart(2, "0")}h ${String(minutes % 60).padStart(2, "0")}m`;
   };
-  const degrees = (dec: number) => {
+  const asDegrees = (dec: number) => {
     const minutes = Math.round(Math.abs(dec) * 60);
     return `${dec < 0 ? "−" : "+"}${Math.floor(minutes / 60)}° ${String(minutes % 60).padStart(2, "0")}′`;
   };
 
-  let time = siderealTime(new Date());
-  let speed = REAL;
-  let listening = false;
-  /** The last step of the grid already played */
-  let played = Math.floor(time / GRID);
-  let last = performance.now();
-
-  /** Plays one step of the grid, `wait` seconds from now */
-  const step = (index: number, wait: number, now: number) => {
-    const at = (audio?.currentTime ?? 0) + wait;
-    const born = now + wait * 1000;
+  /** Shows one step of the grid on the sky, as it sounds */
+  const show = (index: number, now: number) => {
     const hits = hitsAt(index);
-    const interval = bassAt(index);
-    for (const hit of hits) sound(hit, at);
-    if (interval !== null) pluck(interval, index * GRID, at);
+    for (const { star, line, rank } of hits) {
+      rings.push({
+        ...along(line.west, 90 + star[1]),
+        born: now,
+        size: rank === "bells" ? 46 : Math.max(3, 16 - star[2] * 2.2),
+        color: COLORS[colorClass(star[3])][1],
+        bold: rank === "bells",
+      });
+      const name = names.get(star);
+      // Two names on the same spot would be unreadable: the first one stays
+      const taken = labels.some(
+        (label) =>
+          label.west === line.west &&
+          Math.abs(label.star[1] - star[1]) * perDegree < 16,
+      );
+      if (name && !taken)
+        labels.push({ name, star, west: line.west, born: now });
+    }
     // The bass has no star of its own: it sounds from the pole the sky turns about
+    const interval = bassAt(index);
     if (interval !== null) {
       rings.push({
         ...pole,
-        born,
+        born: now,
         size: 22 + interval * 2.5,
         color: BASS,
-        named: false,
+        bold: false,
       });
-    }
-
-    const LINES = lines();
-    for (const { star, line, rank } of hits) {
-      rings.push({
-        ...along(LINES[line].west, 90 + star[1]),
-        born,
-        size: rank === "bells" ? 46 : Math.max(3, 16 - star[2] * 2.2),
-        color: tint(star[3]),
-        named: rank === "bells",
-      });
-    }
-    const first = hits.filter((hit) => hit.line === 0);
-    for (const { star, line } of hits) {
-      const name = names.get(star);
-      const y = pole.y - (90 + star[1]) * perDegree;
-      const { west } = LINES[line];
-      // Two names on the same spot would be unreadable: the first one stays
-      const taken = labels.some(
-        (label) => label.west === west && Math.abs(label.y - y) < 16,
-      );
-      if (name && !taken) {
-        labels.push({ name, y, born, crossed: star[0], west });
-      }
     }
     // A named star stays in the readout until the next one
+    const first = hits.filter((hit) => hit.line.west === 0);
     const told = (first.find((hit) => hit.rank === "bells") ?? first[0])?.star;
-    if (told && (names.has(told) || now - named > 6000)) {
-      const [ra, dec, mag] = told;
-      const name = names.get(told);
+    const name = told && names.get(told);
+    if (told && (name || now - named > 6000)) {
       if (name) named = now;
-      readout.textContent = `${name ? `${name}, ` : ""}α ${hours(ra)}, δ ${degrees(dec)}, mag ${mag.toFixed(1)}`;
+      readout.textContent = `${name ? `${name}, ` : ""}α ${asHours(told[0])}, δ ${asDegrees(told[1])}, mag ${told[2].toFixed(1)}`;
     }
   };
 
   /** Steps of the grid a roll shows ahead of now: two bars */
   const WINDOW = 32;
-  const TINTS: Record<string, string> = {
-    bells: "232,239,251",
-    stars: "255,246,224",
-    dust: "157,180,255",
+  /** What each roll draws its notes in */
+  const INKS: Record<string, string> = {
+    bells: PALE,
+    stars: COLORS[1][1],
+    dust: RULE,
     bass: BASS,
   };
 
-  const drawRolls = () => {
+  const drawRoll = ({ key, pen, width, height }: (typeof rolls)[number]) => {
     const current = time / GRID;
-    for (const { sheet, key, pen } of rolls) {
-      const [width, height] = [sheet.clientWidth, sheet.clientHeight];
-      const lead = width * 0.14;
-      const cell = (width - lead) / WINDOW;
-      pen.clearRect(0, 0, width, height);
-      // Beats along the bottom, bars from top to bottom
-      pen.fillStyle = "rgba(157,180,255,.14)";
-      for (let i = Math.ceil(current); i < current + WINDOW; i++) {
-        if (i % 4) continue;
-        const tall = i % 16 === 0;
+    const lead = width * 0.14;
+    const cell = (width - lead) / WINDOW;
+    pen.clearRect(0, 0, width, height);
+    // Beats along the bottom, bars from top to bottom
+    pen.fillStyle = RULE;
+    pen.globalAlpha = 0.14;
+    for (let i = Math.ceil(current); i < current + WINDOW; i++) {
+      if (i % 4 === 0) {
+        const top = i % 16 ? height - 4 : 0;
+        pen.fillRect(lead + (i - current) * cell, top, 1, height);
+      }
+    }
+    pen.fillStyle = INKS[key];
+    for (let i = Math.floor(current) - 4; i < current + WINDOW; i++) {
+      const x = lead + (i - current) * cell;
+      // What has sounded fades out behind the playhead
+      const gone = current - i;
+      const alpha = gone > 0 ? Math.max(0, 1 - gone / 4) : 0.7;
+      if (key === "bass") {
+        const interval = bassAt(i);
+        if (interval === null) continue;
+        pen.globalAlpha = alpha * (0.45 + 0.55 * glowAt(i * GRID));
         pen.fillRect(
-          lead + (i - current) * cell,
-          tall ? 0 : height - 4,
-          1,
-          height,
+          x,
+          height - 7 - (interval / 12) * (height - 12),
+          cell * 3,
+          3,
+        );
+        continue;
+      }
+      for (const { star, line, rank } of hitsAt(i)) {
+        if (rank !== key) continue;
+        const size =
+          rank === "bells" ? 3.5 : rank === "dust" ? 1 : 3 - star[2] * 0.4;
+        pen.globalAlpha = alpha * line.gain;
+        pen.beginPath();
+        pen.arc(
+          x,
+          height - 4 - heightOf(star) * (height - 8),
+          Math.max(0.8, size),
+          0,
+          7,
+        );
+        pen.fill();
+      }
+    }
+    pen.fillStyle = RULE;
+    pen.globalAlpha = 0.55;
+    pen.fillRect(lead, 0, 1, height);
+
+    if (key === "bells") {
+      // The next bell is often many bars away: say which, and how far
+      const limit = span(0) - 90;
+      let next: [bars: number, name: string] | undefined;
+      for (const [star, name] of names) {
+        const bars = wrap(star[0] - time) / BEAT / 4;
+        if (star[1] <= limit && (!next || bars < next[0])) next = [bars, name];
+      }
+      if (next && next[0] > 1) {
+        pen.font = 'italic 12px "STIX Two Text", serif';
+        pen.textAlign = "right";
+        pen.fillStyle = PALE;
+        pen.globalAlpha = 0.65;
+        pen.fillText(
+          `${next[1]} in ${Math.round(next[0])} bars`,
+          width - 6,
+          height / 2 + 4,
         );
       }
-      for (let i = Math.floor(current) - 4; i < current + WINDOW; i++) {
-        const x = lead + (i - current) * cell;
-        // What has sounded fades out behind the playhead
-        const gone = current - i;
-        const alpha = gone > 0 ? Math.max(0, 1 - gone / 4) : 0.7;
-        if (key === "bass") {
-          const interval = bassAt(i);
-          if (interval === null) continue;
-          pen.fillStyle = `rgba(${TINTS.bass},${(alpha * (0.45 + 0.55 * glowAt(i * GRID))).toFixed(3)})`;
-          pen.fillRect(
-            x,
-            height - 7 - (interval / 12) * (height - 12),
-            cell * 3,
-            3,
-          );
-          continue;
-        }
-        for (const { star, line, rank } of hitsAt(i)) {
-          if (rank !== key) continue;
-          const size =
-            rank === "bells" ? 3.5 : rank === "dust" ? 1 : 3 - star[2] * 0.4;
-          pen.fillStyle = `rgba(${TINTS[key]},${(alpha * (line ? 0.5 : 1)).toFixed(3)})`;
-          pen.beginPath();
-          pen.arc(
-            x,
-            height - 4 - heightOf(star) * (height - 8),
-            Math.max(0.8, size),
-            0,
-            7,
-          );
-          pen.fill();
-        }
-      }
-      pen.fillStyle = "rgba(157,180,255,.55)";
-      pen.fillRect(lead, 0, 1, height);
-
-      if (key === "bells") {
-        // The next bell is often many bars away: say which, and how far
-        const limit = reach() - 90;
-        let next: [bars: number, name: string] | undefined;
-        for (const [star, name] of names) {
-          const turn = (((star[0] - time) % 360) + 360) % 360;
-          const bars = turn / BEAT / 4;
-          if (star[1] <= limit && (!next || bars < next[0])) {
-            next = [bars, name];
-          }
-        }
-        if (next && next[0] > 1) {
-          pen.font = 'italic 12px "STIX Two Text", serif';
-          pen.textAlign = "right";
-          pen.fillStyle = "rgba(168,178,196,.9)";
-          pen.fillText(
-            `${next[1]} in ${Math.round(next[0])} bars`,
-            width - 6,
-            height / 2 + 4,
-          );
-        }
-      }
     }
+    pen.globalAlpha = 1;
   };
 
-  const frame = (now: number) => {
-    const elapsed = Math.min(0.1, (now - last) / 1000);
-    last = now;
-    time += speed * elapsed;
-    // The sky keeps its real pace until someone listens: then a beat is a sidereal minute
-    const rest = listening ? (knob("tempo") / 60) * BEAT : REAL;
-    speed = rest + (speed - rest) * Math.exp(-elapsed / 1.5);
-    chart.style.rotate = `${(time - UP).toFixed(3)}deg`;
-
-    // Steps are scheduled a little ahead and sound exactly on the grid
-    const due = Math.floor((time + speed * AHEAD) / GRID);
-    // After a pause, such as a hidden tab, there is no catching up
-    if (due - played > 16) played = due - 1;
-    for (let index = played + 1; index <= due; index++) {
-      step(index, Math.max(0, (index * GRID - time) / speed), now);
-    }
-    played = due;
-
-    pen.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+  const drawStage = (now: number) => {
+    pen.clearRect(0, 0, stage.width, stage.height);
     pen.lineWidth = 1;
-    pen.strokeStyle = "rgba(157,180,255,.3)";
-    for (const { west, gain } of lines()) {
+    pen.strokeStyle = RULE;
+    for (const { west, gain } of lines) {
       const end = along(west, span(west));
-      pen.globalAlpha = gain;
+      pen.globalAlpha = 0.3 * gain;
       pen.beginPath();
       pen.moveTo(pole.x, pole.y);
       pen.lineTo(end.x, end.y);
       pen.stroke();
     }
-    pen.globalAlpha = 1;
-    // Degrees a star has turned past its line: below zero when its note is
-    // scheduled but it has yet to arrive
-    const past = (label: (typeof labels)[number]) =>
-      ((((time - label.crossed - label.west) % 360) + 540) % 360) - 180;
     labels = labels.filter((label) => past(label) < TRAIL);
     pen.font = 'italic 15px "STIX Two Text", serif';
+    pen.fillStyle = PALE;
     for (const label of labels) {
-      if (now < label.born) continue;
-      // The star has turned about the pole since it crossed
-      const turned = Math.max(0, past(label));
-      const angle = ((turned + label.west) * Math.PI) / 180;
-      const distance = pole.y - label.y;
-      const shown = Math.min(
-        1,
-        (now - label.born) / 500,
-        (1 - turned / TRAIL) * 3,
-      );
-      pen.fillStyle = `rgba(232,239,251,${(0.9 * shown).toFixed(3)})`;
-      pen.fillText(
-        label.name,
-        pole.x + distance * Math.sin(angle) + 12,
-        pole.y - distance * Math.cos(angle) + 5,
-      );
+      const turned = past(label);
+      const { x, y } = along(turned + label.west, 90 + label.star[1]);
+      pen.globalAlpha =
+        0.9 * Math.min(1, (now - label.born) / 500, (1 - turned / TRAIL) * 3);
+      pen.fillText(label.name, x + 12, y + 5);
     }
     rings = rings.filter((ring) => now - ring.born < 1800);
     for (const ring of rings) {
-      if (now < ring.born) continue;
       const age = (now - ring.born) / 1800;
-      pen.lineWidth = ring.named ? 2 : 1;
-      pen.strokeStyle = `rgba(${ring.color},${(0.7 * (1 - age) ** 2).toFixed(3)})`;
+      pen.lineWidth = ring.bold ? 2 : 1;
+      pen.strokeStyle = ring.color;
+      pen.globalAlpha = 0.7 * (1 - age) ** 2;
       pen.beginPath();
       pen.arc(
         ring.x,
@@ -972,7 +935,53 @@ const SCALES = [
       );
       pen.stroke();
     }
-    drawRolls();
+    pen.globalAlpha = 1;
+  };
+
+  let time = siderealTime(new Date());
+  let speed = REAL;
+  let listening = false;
+  /** The last step of the grid sent to the audio clock, a little ahead of the sky */
+  let played = Math.floor(time / GRID);
+  /** The last step shown on the sky */
+  let shown = played;
+  let last = performance.now();
+  /** When the canvases were last drawn, and the chart's angle as last written */
+  let drawn = 0;
+  let written = "";
+
+  const frame = (now: number) => {
+    const elapsed = Math.min(0.1, (now - last) / 1000);
+    last = now;
+    time += speed * elapsed;
+    // The sky keeps its real pace until someone listens: then a beat is a sidereal minute
+    const rest = listening ? (knob("tempo") / 60) * BEAT : REAL;
+    speed = rest + (speed - rest) * Math.exp(-elapsed / 1.5);
+    const angle = `${(time - UP).toFixed(3)}deg`;
+    if (angle !== written) chart.style.rotate = written = angle;
+
+    // Sound is scheduled a little ahead, to fall exactly on the grid
+    const due = Math.floor((time + speed * AHEAD) / GRID);
+    // After a pause, such as a hidden tab, there is no catching up
+    if (due - played > 16) played = due - 1;
+    while (played < due) {
+      played++;
+      if (audio?.state === "running") {
+        const wait = Math.max(0, (played * GRID - time) / speed);
+        schedule(played, audio.currentTime + wait);
+      }
+    }
+    const here = Math.floor(time / GRID);
+    if (here - shown > 16) shown = here - 1;
+    while (shown < here) show(++shown, now);
+
+    // A sky at its real pace barely moves: with nothing fading, it is drawn twice a second
+    const still = !listening && !rings.length && !labels.length;
+    if (!still || now - drawn > 500) {
+      drawn = now;
+      drawStage(now);
+      rolls.forEach(drawRoll);
+    }
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);

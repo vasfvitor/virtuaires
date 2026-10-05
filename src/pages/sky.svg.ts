@@ -1,13 +1,10 @@
 import type { APIRoute } from "astro";
 import stars from "../data/stars.json";
 import milkyWay from "../data/milkyway.json";
-import { UP } from "../lib/sky";
+import { COLORS, LIMIT, UP, colorClass, type Star } from "../lib/sky";
 
 // The southern sky as seen from the ground: an azimuthal equidistant
 // projection centred on the south celestial pole, one unit per degree.
-
-/** Northernmost declination in the data, in degrees */
-const LIMIT = 40;
 
 /** Upper magnitude bound, dot diameter in px and opacity of each brightness class */
 const CLASSES = [
@@ -17,14 +14,6 @@ const CLASSES = [
   [4, 1.9, 0.7],
   [5, 1.4, 0.55],
   [6, 1, 0.4],
-] as const;
-
-/** Upper B-V bound and colour, from hot blue-white stars to cool golden ones.
-    The third value is a more saturated version for wide-gamut screens */
-const COLORS = [
-  [0.3, "#cfdcff", "color(display-p3 0.76 0.85 1)"],
-  [1, "#fff6e0", "color(display-p3 1 0.96 0.86)"],
-  [Infinity, "#ffcf87", "color(display-p3 1 0.79 0.46)"],
 ] as const;
 
 const radius = 90 + LIMIT;
@@ -37,15 +26,10 @@ const project = (ra: number, dec: number) => {
 };
 
 const dots = new Map<number, string[]>();
-for (const [ra, dec, mag, bv] of stars as [
-  number,
-  number,
-  number,
-  number | null,
-][]) {
+for (const [ra, dec, mag, bv] of stars as Star[]) {
   const [x, y] = project(ra, dec).map((n) => n.toFixed(1));
   const size = CLASSES.findIndex(([limit]) => mag <= limit);
-  const color = COLORS.findIndex(([limit]) => (bv ?? 0.65) <= limit);
+  const color = colorClass(bv);
   const key = size * COLORS.length + color;
   if (!dots.has(key)) dots.set(key, []);
   dots.get(key)!.push(`M${x} ${y}h.01`);

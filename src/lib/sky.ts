@@ -7,18 +7,40 @@ const LONGITUDE = -45;
 /** Right ascension drawn straight up from the pole in sky.svg: the Southern Cross */
 export const UP = 187;
 
+/** Northernmost declination in the star data, in degrees */
+export const LIMIT = 40;
+/** Degrees the sky turns in a day */
+export const TURN = 360.98564736629;
+
+/** A catalogue star: right ascension and declination in degrees, magnitude, B-V colour */
+export type Star = [ra: number, dec: number, mag: number, bv: number | null];
+
+/** Upper B-V bound and colour, from hot blue-white stars to cool golden ones.
+    The third value is a more saturated version for wide-gamut screens */
+export const COLORS = [
+  [0.3, "#cfdcff", "color(display-p3 0.76 0.85 1)"],
+  [1, "#fff6e0", "color(display-p3 1 0.96 0.86)"],
+  [Infinity, "#ffcf87", "color(display-p3 1 0.79 0.46)"],
+] as const;
+
+/** Which of COLORS a star falls in; one without a measured colour counts as sunlike */
+export const colorClass = (bv: number | null) =>
+  COLORS.findIndex(([limit]) => (bv ?? 0.65) <= limit);
+
+/** A number brought into 0 to `size`, as angles are into a full turn */
+export const wrap = (n: number, size = 360) => ((n % size) + size) % size;
+
 const julianDate = (date: Date) => date.getTime() / 86_400_000 + 2440587.5;
 
 /** Local sidereal time in degrees: the right ascension on the meridian */
 export const siderealTime = (date: Date) => {
-  const greenwich =
-    280.46061837 + 360.98564736629 * (julianDate(date) - 2451545);
-  return (((greenwich + LONGITUDE) % 360) + 360) % 360;
+  const greenwich = 280.46061837 + TURN * (julianDate(date) - 2451545);
+  return wrap(greenwich + LONGITUDE);
 };
 
 /** How far to turn sky.svg clockwise so the stars on the meridian are straight up */
 export const skyAngle = (date: Date) =>
-  ((siderealTime(date) - UP + 360) % 360).toFixed(2);
+  wrap(siderealTime(date) - UP).toFixed(2);
 
 /** Mean age of the Moon as a fraction of the lunar month: 0 is new, 0.5 is full */
 export const moonPhase = (date: Date) => {
@@ -28,6 +50,9 @@ export const moonPhase = (date: Date) => {
 
 /** Where the terminator crosses the disc's equator: 1 at new Moon, -1 at full */
 const terminator = (phase: number) => Math.cos(2 * Math.PI * phase);
+
+/** The lit share of the disc, 0 to 1 */
+export const litShare = (phase: number) => (1 - terminator(phase)) / 2;
 
 /**
  * Outline of the lit part of a unit disc. In the southern hemisphere the Moon
@@ -59,6 +84,6 @@ export const moonLabel = (phase: number) => {
     [1, "New Moon"],
   ] as const;
   const name = names.find(([limit]) => phase <= limit)![1];
-  const lit = Math.round(((1 - terminator(phase)) / 2) * 100);
+  const lit = Math.round(litShare(phase) * 100);
   return `${name}, ${lit}% lit`;
 };
