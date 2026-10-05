@@ -527,8 +527,12 @@ const glow = (() => {
       Math.min(pole.y / Math.cos(angle), west ? side : Infinity) / perDegree
     );
   };
-  /** How high on the meridian a star crosses, 0 at the pole and 1 at the top */
-  const heightOf = (star: Star) => Math.min(1, (90 + star[1]) / span(0));
+  /**
+   * How high a star crosses, from 0 at the pole to 1 at the edge of the
+   * chart. It is measured on the sky, not the window, so a star sounds the
+   * same note on every screen
+   */
+  const heightOf = (star: Star) => (90 + star[1]) / (90 + LIMIT);
 
   /** The stars whose right ascension lies between two sidereal times, up to a declination */
   const crossed = (from: number, to: number, limit: number) => {
@@ -651,7 +655,7 @@ const glow = (() => {
     const known = tunes.get(verse);
     if (known) return known;
     const from = verse * VERSE * GRID;
-    const found = crossed(from, from + 2 * BAR * GRID, span(0) - 90).filter(
+    const found = crossed(from, from + 2 * BAR * GRID, LIMIT).filter(
       (star) => star[2] <= CLEAR,
     );
     const rhythm = RHYTHMS[found.length % RHYTHMS.length];
