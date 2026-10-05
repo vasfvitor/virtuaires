@@ -1,0 +1,7 @@
+# Cloudflare Pages redirects: the old blog and about pages, gone with the redesign
+/blog           /  301
+/blog/*         /  301
+/about          /  301
+/about/         /  301
+/rss.xml        /  301
+/og/*           /og.jpg  301
