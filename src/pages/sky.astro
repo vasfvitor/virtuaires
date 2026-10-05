@@ -613,6 +613,34 @@ const glow = (() => {
       : Math.max(0, scale.indexOf(interval % 12));
   };
 
+  // Form. Listening starts a song: an intro with only the pad and bass, then
+  // verses and choruses that add the tune and the pulse, and a break where
+  // only the bells ring; after the break it goes round again from the verse
+
+  /** Bars a section lasts: two phrases */
+  const VERSE = BAR * PHRASE * 2;
+  /** What plays in each section: the tune (off, or up an octave for a chorus), the pulse (off, kick, kick and hi-hat) and the bass */
+  const SONG = [
+    { name: "Intro", tune: 0, pulse: 0, bass: true },
+    { name: "Verse", tune: 1, pulse: 1, bass: true },
+    { name: "Verse", tune: 1, pulse: 2, bass: true },
+    { name: "Chorus", tune: 2, pulse: 2, bass: true },
+    { name: "Verse", tune: 1, pulse: 2, bass: true },
+    { name: "Chorus", tune: 2, pulse: 2, bass: true },
+    { name: "Break", tune: 0, pulse: 0, bass: false },
+  ];
+  /** The step the song started on, at a bar line */
+  let origin = 0;
+  /** Which section of the song a step is in, counted from its start */
+  const partOf = (step: number) => {
+    const n = Math.floor((step - origin) / VERSE);
+    return n < 1 ? 0 : 1 + ((n - 1) % (SONG.length - 1));
+  };
+  const sectionAt = (step: number) => SONG[partOf(step)];
+  /** Which bar of its phrase a step is in */
+  const barOf = (step: number) =>
+    wrap(Math.floor((step - origin) / BAR), PHRASE);
+
   /** The chord of the bar a step is in, as the degree of the scale it stands on */
   const chordAt = (step: number) => {
     const bar = Math.floor(step / BAR);
@@ -620,7 +648,7 @@ const glow = (() => {
     if (known !== undefined) return known;
     // I V vi IV, or the same moves on a five-note scale
     const round = currentScale().length > 5 ? [0, 4, 5, 3] : [0, 3, 4, 2];
-    let chord = round[wrap(bar, PHRASE)];
+    let chord = round[barOf(step)];
     for (let i = 0; i < BAR; i++) {
       const bell = hitsAt(bar * BAR + i).find(
         (hit) => hit.band === "bells" && !hit.line.west,
@@ -647,25 +675,33 @@ const glow = (() => {
   ];
   /** A one-bar motif: when its notes fall, and how far each is from the first, in degrees */
   type Tune = { rhythm: number[]; shape: number[] };
-  /** Bars a tune lasts before the sky gives a new one: two phrases */
-  const VERSE = BAR * PHRASE * 2;
 
   /**
-   * The motif, drawn from the stars that cross as its verse begins. How many
-   * there are picks its rhythm, and their heights its shape: each star
-   * higher or lower than the last moves it a step, nearly level ones repeat
-   * a note, and the biggest jump among them becomes its one leap
+   * The motif, drawn from the stars that cross as its section begins. How
+   * many cross in its first two bars picks its rhythm, and the heights of the
+   * next few its shape: each star higher or lower than the last moves it a
+   * step, nearly level ones repeat a note, and the biggest jump among them
+   * becomes its one leap. Every chorus of a round sings the same one
    */
   const tuneAt = (step: number) => {
-    const verse = Math.floor(step / VERSE);
-    const known = tunes.get(verse);
+    let part = Math.floor((step - origin) / VERSE);
+    if (sectionAt(step).name === "Chorus") {
+      const round = SONG.length - 1;
+      const first = SONG.findIndex((section) => section.name === "Chorus");
+      part = Math.floor((part - 1) / round) * round + first;
+    }
+    const known = tunes.get(part);
     if (known) return known;
-    const from = verse * VERSE * GRID;
-    const found = crossed(from, from + 2 * BAR * GRID, LIMIT).filter(
-      (star) => star[2] <= CLEAR,
-    );
-    const rhythm = RHYTHMS[found.length % RHYTHMS.length];
-    const heights = found.map(heightOf);
+    const from = (origin + part * VERSE) * GRID;
+    const clear = (found: Star[]) => found.filter((star) => star[2] <= CLEAR);
+    const rhythm =
+      RHYTHMS[
+        clear(crossed(from, from + 2 * BAR * GRID, LIMIT)).length %
+          RHYTHMS.length
+      ];
+    const heights = clear(crossed(from, from + 30, LIMIT))
+      .slice(0, rhythm.length)
+      .map(heightOf);
     const jumps = rhythm.map((_, i) =>
       i && i < heights.length ? heights[i] - heights[i - 1] : 0,
     );
@@ -685,7 +721,7 @@ const glow = (() => {
     });
     const motif = { rhythm, shape };
     if (tunes.size > 50) tunes.clear();
-    tunes.set(verse, motif);
+    tunes.set(part, motif);
     return motif;
   };
 
@@ -697,14 +733,16 @@ const glow = (() => {
    * then once a step higher, then its first half coming home to the key note
    */
   const melodyAt = (step: number) => {
+    const { tune } = sectionAt(step);
+    if (!tune) return null;
     const { rhythm, shape } = tuneAt(step);
-    const bar = wrap(Math.floor(step / BAR), PHRASE);
+    const bar = barOf(step);
     const at = wrap(step, BAR);
     const i = rhythm.indexOf(at);
     if (i < 0) return null;
     const size = currentScale().length;
-    /** The key note, an octave above the bass's */
-    const home = size;
+    /** The key note, an octave above the bass's, and one more in a chorus */
+    const home = size * tune;
     const half = Math.ceil(rhythm.length / 2);
     if (bar === PHRASE - 1 && i >= half) {
       return i === half ? { degree: home, steps: BAR - at } : null;
@@ -723,7 +761,8 @@ const glow = (() => {
 
   /** The bass's bar in sixteenths: the chord's root (0), its fifth (1), the root an octave up (2), or a rest */
   const GROOVE = [0, , , , , , 0, , 1, , , , 2, , 1, ,];
-  const bassAt = (step: number) => GROOVE[wrap(step, BAR)] ?? null;
+  const bassAt = (step: number) =>
+    sectionAt(step).bass ? (GROOVE[wrap(step, BAR)] ?? null) : null;
 
   /**
    * The pulse: a kick on the first and third beats, and on the push before the
@@ -732,13 +771,18 @@ const glow = (() => {
    * them when a brighter one does
    */
   const drumsAt = (step: number) => {
+    const { pulse } = sectionAt(step);
+    if (!pulse) return { kick: false, hat: undefined };
     const at = wrap(step, BAR);
     const kick =
       at === 0 || at === 8 || (at === 6 && glowAt(step * GRID) > 0.5);
     const star = hitsAt(step).find(
       (hit) => hit.band === "dust" && !hit.line.west,
     )?.star;
-    const hat = star && (at % 2 === 0 || star[2] <= CLEAR) ? star : undefined;
+    const hat =
+      pulse > 1 && star && (at % 2 === 0 || star[2] <= CLEAR)
+        ? star
+        : undefined;
     return { kick, hat };
   };
 
@@ -1170,6 +1214,21 @@ const glow = (() => {
     pen.globalAlpha = 0.55;
     pen.fillRect(lead, 0, 1, height);
 
+    if (key === "stars") {
+      // Which section is playing, and what comes next when it is close
+      const step = Math.floor(current);
+      const next = sectionAt(step + BAR * 2);
+      const name = sectionAt(step).name;
+      pen.font = 'italic 12px "STIX Two Text", serif';
+      pen.textAlign = "right";
+      pen.fillStyle = PALE;
+      pen.globalAlpha = 0.65;
+      pen.fillText(
+        next.name === name ? name : `${name}, then ${next.name.toLowerCase()}`,
+        width - 6,
+        12,
+      );
+    }
     if (key === "bells") {
       // The next bell is often many bars away: say which, and how far
       const limit = span(0) - 90;
@@ -1241,6 +1300,7 @@ const glow = (() => {
   let played = Math.floor(time / GRID);
   /** The last step shown on the sky */
   let shown = played;
+  origin = Math.floor(played / BAR) * BAR;
   let last = performance.now();
   /** When the canvases were last drawn, and the chart's angle as last written */
   let drawn = 0;
@@ -1286,7 +1346,11 @@ const glow = (() => {
   requestAnimationFrame(frame);
 
   const listen = async (on: boolean) => {
-    if (on && !audio) wake();
+    if (on && !audio) {
+      wake();
+      origin = (Math.floor(played / BAR) + 1) * BAR;
+      forget();
+    }
     listening = on;
     await (on ? audio?.resume() : audio?.suspend());
     button.ariaPressed = String(on);
