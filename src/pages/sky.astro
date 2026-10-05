@@ -38,7 +38,7 @@ const FACTS = [
 ] as const;
 
 const DESCRIPTION =
-  "The southern sky right now, on Brasília time, played as music. The stars that cross the meridian ring, sing and keep the beat, from the Hipparcos catalogue, and the Moon's phase picks the scale.";
+  "The southern sky over Brasília, live and played as music. Each star sounds as it crosses the meridian, in a scale set by tonight's Moon.";
 
 // What search engines are told about this page
 const site = Astro.site!;
@@ -60,24 +60,19 @@ const schema = {
 
 /** The instruments: key, name, what plays it and starting level */
 const BANDS = [
+  ["bells", "Bells", "The 31 brightest stars. Each one sets the chord", 1],
   [
-    "bells",
-    "Bells",
-    "The stars with a name of their own, and the chords they set",
+    "stars",
+    "Tune",
+    "A short phrase made from the stars at the start of each section",
     1,
   ],
-  ["stars", "Tune", "A motif drawn from the stars as each verse begins", 1],
-  ["dust", "Dust", "Every other star crossing, on the notes of the chord", 0.6],
-  [
-    "drums",
-    "Pulse",
-    "A soft kick on the beat, and the fainter stars as a hi-hat",
-    0.7,
-  ],
+  ["dust", "Dust", "All the other stars, on notes of the chord", 0.6],
+  ["drums", "Pulse", "A kick on the beat. Faint stars play the hi-hat", 0.7],
   [
     "bass",
     "Bass",
-    "The chord's root, on a beat of sidereal minutes, brighter in the Milky Way",
+    "Follows the chord, and brightens while the Milky Way crosses",
     0.5,
   ],
 ] as const;
@@ -153,7 +148,7 @@ const glow = (() => {
   fonts={["STIXTwoText-regular", "STIXTwoText-italic", "STIXTwoText-bold"]}
   image={{
     src: "/og-sky.jpg",
-    alt: "The Southern Cross upright on the meridian, ringing as it crosses",
+    alt: "The Southern Cross upright on the meridian line, with rings where Acrux and Gacrux sound",
   }}
 >
   <script
@@ -245,17 +240,13 @@ const glow = (() => {
     <section class="notes">
       <h2>How it plays</h2>
       <p>
-        The sky turns at the pace of the music: one beat is one sidereal minute.
-        Every star that crosses a line sounds. The 31 with a name of their own
-        ring as bells and move the chord, and the fainter ones glint on its
-        notes and keep the hi-hat. The tune is drawn from the heights of the
-        stars as each section begins, the bass opens up while the Milky Way is
-        on the meridian, and the phase of the Moon picks the scale.
+        The sky keeps the time: one beat is one sidereal minute. Stars play as
+        they cross the lines. The 31 brightest ring as bells and change the
+        chord; the rest play the hi-hat and soft notes.
       </p>
       <p>
-        The positions are those of the Hipparcos catalogue:{" "}
-        {stars.length.toLocaleString("en")} stars down to magnitude 6,
-        everything south of declination +40°.
+        The melody comes from the stars at the start of each section and
+        repeats. The Moon picks the scale, and the Milky Way brightens the bass.
       </p>
       {FACTS.map(([heading, rows]) => (
         <>
