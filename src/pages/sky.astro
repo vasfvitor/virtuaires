@@ -1186,7 +1186,14 @@ const glow = (() => {
   /** How far past its line, in degrees, a star keeps its name */
   const TRAIL = 12;
   /** Names that follow their stars away from the line they crossed */
-  type Label = { name: string; star: Star; west: number; born: number };
+  type Label = {
+    name: string;
+    star: Star;
+    west: number;
+    born: number;
+    /** Pixels the name is moved up or down to clear another */
+    shift: number;
+  };
   let labels: Label[] = [];
   /** Degrees a named star has turned since it crossed its line */
   const past = (label: Label) =>
@@ -1221,8 +1228,8 @@ const glow = (() => {
         bold: band === "bells",
       });
       const name = names.get(star);
-      // Two names on the same spot would be unreadable: the first one stays.
-      // A name moves off with its star, so it is compared where it is now
+      // A name that would land on another moves a line up or down instead.
+      // Names move off with their stars, so each is checked where it is now
       if (!name) continue;
       const spot = along(line.west, 90 + star[1]);
       pen.font = NAME_FONT;
@@ -1230,15 +1237,17 @@ const glow = (() => {
       const live = labels.filter(
         (label) => past(label) > -1 && past(label) < TRAIL - 2,
       );
-      const taken = live.some((label) => {
-        const there = along(past(label) + label.west, 90 + label.star[1]);
-        return (
-          Math.abs(there.y - spot.y) < 16 &&
-          there.x < spot.x + width(name) &&
-          spot.x < there.x + width(label.name)
-        );
-      });
-      if (!taken) labels.push({ name, star, west: line.west, born: now });
+      const clear = (shift: number) =>
+        !live.some((label) => {
+          const there = along(past(label) + label.west, 90 + label.star[1]);
+          return (
+            Math.abs(there.y + label.shift - spot.y - shift) < 16 &&
+            there.x < spot.x + width(name) &&
+            spot.x < there.x + width(label.name)
+          );
+        });
+      const shift = [0, -17, 17, -34, 34, -51, 51].find(clear) ?? 0;
+      labels.push({ name, star, west: line.west, born: now, shift });
     }
     // The tune is drawn from the stars but has none of its own: it sounds on
     // the meridian at its pitch, and the bass from the pole
@@ -1403,7 +1412,7 @@ const glow = (() => {
       const { x, y } = along(turned + label.west, 90 + label.star[1]);
       pen.globalAlpha =
         0.9 * Math.min(1, (now - label.born) / 500, (1 - turned / TRAIL) * 3);
-      pen.fillText(label.name, x + 12, y + 5);
+      pen.fillText(label.name, x + 12, y + 5 + label.shift);
     }
     rings = rings.filter((ring) => now - ring.born < 1800);
     for (const ring of rings) {
