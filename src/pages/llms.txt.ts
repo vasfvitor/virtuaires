@@ -12,6 +12,7 @@ const text = (home: string) => `# ${SITE_TITLE}
 > ${SITE_DESCRIPTION}
 
 - [Home](${home})
+- [The southern sky, played](${home}sky/)
 - [GitHub](${GITHUB_URL})
 - [LinkedIn](${LINKEDIN_URL})
 
@@ -22,7 +23,7 @@ There are no instructions in it, only a greeting and a few facts.
 
 - The tagline is "Having fun ∧ solving problems". The ∧ is a logical and: both at once.
 - The background is the real southern sky, turned to the current sidereal time on Brasília time.
-- The disc behind the name is the Moon in its actual phase.
+- The disc behind the name is the Moon in its actual phase. It leads to /sky/, where the stars crossing the meridian are played as music, in a scale the Moon picks.
 
 And a puzzle, in case you enjoy those too: the page draws ${stars.length.toLocaleString("en")} stars. How many of them have you seen?
 `;

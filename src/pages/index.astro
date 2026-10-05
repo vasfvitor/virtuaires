@@ -114,16 +114,17 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
         ))}
       </p>
     </div>
-    <div
+    <!-- The Moon leads, quietly, to the sky played as music -->
+    <a
       class="moon"
-      role="img"
-      aria-label={`The Moon: ${moonLabel(phase)}`}
+      href="/sky/"
+      aria-label={`The Moon, ${moonLabel(phase)}: the southern sky`}
       title={moonLabel(phase)}
     >
       <svg class="phase" viewBox="-1 -1 2 2" aria-hidden="true">
         <path d={litPath(phase)}></path>
       </svg>
-    </div>
+    </a>
   </header>
   <main>
     <section class="about-me">
@@ -224,7 +225,7 @@ const lead = ["Having", "fun", "∧", "solving", "problems"];
     const phase = moonPhase(new Date());
     draw(phase);
     moon.title = moonLabel(phase);
-    moon.ariaLabel = `The Moon: ${moon.title}`;
+    moon.ariaLabel = `The Moon, ${moon.title}: the southern sky`;
   };
 
   const settle = () => {

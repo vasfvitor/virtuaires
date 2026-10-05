@@ -1,9 +1,31 @@
 ---
 import BaseLayout from "@components/Layout/BaseLayout.astro";
+import { SITE_TITLE } from "~/consts";
 import milkyWay from "../data/milkyway.json";
 import { moonLabel, moonPhase, skyAngle } from "../lib/sky";
 
 const now = new Date();
+
+const DESCRIPTION =
+  "The southern sky right now, on Brasília time, played as music. The stars that cross the meridian ring, sing and keep the beat, from the Hipparcos catalogue, and the Moon's phase picks the scale.";
+
+// What search engines are told about this page
+const site = Astro.site!;
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  url: new URL("/sky/", site).href,
+  name: "The southern sky",
+  description: DESCRIPTION,
+  inLanguage: "en",
+  isPartOf: { "@type": "WebSite", url: site.href, name: SITE_TITLE },
+  author: { "@id": `${site.href}#me` },
+  about: [
+    { "@type": "Thing", name: "Southern celestial hemisphere" },
+    { "@type": "Thing", name: "Sonification" },
+    { "@type": "Thing", name: "Lunar phase" },
+  ],
+};
 
 /** The instruments: key, name, what plays it and starting level */
 const BANDS = [
@@ -96,10 +118,15 @@ const glow = (() => {
 
 <BaseLayout
   title="The southern sky"
-  description="The southern sky as a music box: every star that crosses the meridian plays a note, from real star positions."
+  description={DESCRIPTION}
   fonts={["STIXTwoText-regular", "STIXTwoText-italic"]}
-  noindex
 >
+  <script
+    is:inline
+    slot="head"
+    type="application/ld+json"
+    set:html={JSON.stringify(schema)}
+  />
   <div
     class="chart"
     aria-hidden="true"
