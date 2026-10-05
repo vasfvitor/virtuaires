@@ -15,7 +15,8 @@ const KNOBS = [
   ["shimmer", "Overtone", 0, 1, 0.01, 0.25],
   ["contrast", "Faint stars", 0, 1, 0.01, 0.35],
   ["bright", "Bright stars", 0, 1, 0.01, 0.6],
-  ["pace", "Pace, °/s", 0, 3, 0.01, 0.2],
+  ["drone", "Drone", 0, 0.4, 0.005, 0.08],
+  ["pace", "Pace, °/s", 0, 3, 0.01, 0.3],
   // 180° less the golden angle
   ["line", "Second line, °", 10, 90, 0.5, 42.5],
 ] as const;
@@ -26,7 +27,7 @@ const PRESETS = {
   Cathedral: { repeats: 0.7, gap: 0.6, tone: 1400, length: 1.6 },
   Glass: { shimmer: 0.8, tone: 6000, length: 0.6, repeats: 0.3, gap: 0.25 },
   "Bright stars only": { contrast: 0, bright: 1 },
-  Rain: { pace: 0.35, length: 0.4, contrast: 0.6, repeats: 0.25 },
+  Rain: { pace: 0.6, length: 0.4, contrast: 0.6, repeats: 0.25 },
 };
 const SCALES = [
   "Lydian",
@@ -368,6 +369,8 @@ const SCALES = [
   // Sound: a soft bell per star, into a long echo
   let audio: AudioContext | undefined;
   let bus: GainNode;
+  /** Everything but the named stars: it steps back while one of them rings */
+  let under: GainNode;
   /** What each control drives, once there is sound */
   let dials: Record<string, AudioParam> = {};
 
@@ -380,6 +383,26 @@ const SCALES = [
     const again = audio.createGain();
     const wet = audio.createGain();
     bus.connect(limiter);
+    under = audio.createGain();
+    under.connect(bus);
+
+    // A low open fifth under everything, so a slow sky is never silent
+    const bed = audio.createGain();
+    const soft = audio.createBiquadFilter();
+    soft.frequency.value = 500;
+    for (const [frequency, detune] of [
+      [55, -4],
+      [110, 3],
+      [164.81, -2],
+    ]) {
+      const voice = audio.createOscillator();
+      voice.type = "triangle";
+      voice.frequency.value = frequency;
+      voice.detune.value = detune;
+      voice.connect(soft);
+      voice.start();
+    }
+    soft.connect(bed).connect(under);
     bus.connect(echo).connect(damp).connect(again).connect(echo);
     damp.connect(wet).connect(limiter);
     limiter.connect(audio.destination);
@@ -389,6 +412,7 @@ const SCALES = [
       repeats: again.gain,
       gap: echo.delayTime,
       tone: damp.frequency,
+      drone: bed.gain,
     };
     for (const name in dials) dials[name].value = knob(name);
   };
@@ -412,9 +436,26 @@ const SCALES = [
     tune();
   });
 
+  /** Faintest magnitude that still plays a full note; the rest are a patter of ticks */
+  const CLEAR = 3.5;
+  /** Seconds between full notes: a faster sky turns the surplus into ticks */
+  const BREATH = 0.16;
+  let noted = 0;
+  let ticked = 0;
+
   const play = (star: Star, gain: number) => {
     const [, dec, mag, bv] = star;
     if (!audio || audio.state !== "running") return;
+    const at = audio.currentTime;
+    // Three ranks: the named stars are bells, the clear ones notes, the rest ticks
+    const named = names.has(star);
+    const clear = !named && mag <= CLEAR && at - noted >= BREATH;
+    if (clear) noted = at;
+    if (!named && !clear) {
+      if (at - ticked < 0.04) return;
+      ticked = at;
+    }
+
     const height = (90 + dec) / reach();
     const scale = currentScale();
     // Higher on the line is higher in pitch, over four octaves from A2
@@ -429,39 +470,46 @@ const SCALES = [
       interval === undefined
         ? (warm ? 55 : 110) * 2 ** (semitones / 12)
         : 220 * 2 ** (interval / 12);
-    // The stars with names ring like a struck bell
-    const named = names.has(star);
     // A magnitude is a factor of about 2.5 in light; the ear gets a gentler curve
     const faint = 10 ** (-(0.34 - 0.24 * knob("contrast")) * mag);
     const level =
-      Math.max(named ? 0.35 : 0, Math.min(0.9, 0.5 * faint)) * (1 - height / 2);
+      Math.max(named ? 0.4 : clear ? 0.12 : 0, Math.min(0.9, 0.5 * faint)) *
+      (1 - height / 2) *
+      gain;
     const length = (0.8 + 4 * level) * knob("length") * (named ? 2 : 1);
-    const at = audio.currentTime;
-    const loud = level * gain;
 
     const tone = (frequency: number, peak: number, ends: number) => {
       if (peak < 0.0005) return;
       const voice = audio!.createOscillator();
-      const gain = audio!.createGain();
+      const loudness = audio!.createGain();
       voice.type = warm ? "triangle" : "sine";
       voice.frequency.value = frequency;
-      gain.gain.setValueAtTime(0, at);
-      gain.gain.linearRampToValueAtTime(peak, at + (warm ? 0.04 : 0.006));
-      gain.gain.exponentialRampToValueAtTime(0.0001, at + ends);
-      voice.connect(gain).connect(bus);
+      loudness.gain.setValueAtTime(0, at);
+      loudness.gain.linearRampToValueAtTime(peak, at + (warm ? 0.04 : 0.006));
+      loudness.gain.exponentialRampToValueAtTime(0.0001, at + ends);
+      voice.connect(loudness).connect(named ? bus : under);
       voice.start(at);
       voice.stop(at + ends + 0.05);
     };
-    tone(pitch, loud, length);
+
+    if (!named && !clear) {
+      tone(pitch * 2, level * 0.6, 0.18);
+      return;
+    }
+    tone(pitch, level, length);
     if (!warm) {
-      tone(pitch * (hot ? 3 : 2), loud * knob("shimmer"), length * 0.4);
+      tone(pitch * (hot ? 3 : 2), level * knob("shimmer"), length * 0.4);
     }
     if (named) {
-      const bell = loud * knob("bright");
+      const bell = level * knob("bright");
       tone(pitch / 2, bell, length);
       tone(pitch * 2, bell * 0.5, length * 0.7);
       tone(pitch * 3, bell * 0.3, length * 0.5);
       tone(pitch * 4.2, bell * 0.12, length * 0.25);
+      // The rest of the sky steps back, then returns as the bell fades
+      under.gain.cancelScheduledValues(at);
+      under.gain.setTargetAtTime(0.3, at, 0.03);
+      under.gain.setTargetAtTime(1, at + 0.5, 0.9);
     }
   };
 
@@ -562,7 +610,7 @@ const SCALES = [
     // A fast spin would pile up hundreds of notes a second: keep the brightest
     if (heard.some((line) => line.length) && now - sounded > 35) {
       heard.forEach((line, i) =>
-        line.slice(0, 3).forEach((star) => play(star, LINES[i].gain)),
+        line.slice(0, 4).forEach((star) => play(star, LINES[i].gain)),
       );
       sounded = now;
     }
