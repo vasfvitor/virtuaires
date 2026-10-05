@@ -15,7 +15,7 @@ const KNOBS = [
   ["shimmer", "Overtone", 0, 1, 0.01, 0.25],
   ["contrast", "Faint stars", 0, 1, 0.01, 0.35],
   ["bright", "Bright stars", 0, 1, 0.01, 0.6],
-  ["drone", "Drone", 0, 0.4, 0.005, 0.08],
+  ["bass", "Bass", 0, 1, 0.01, 0.4],
   ["pace", "Pace, °/s", 0, 3, 0.01, 0.3],
   // 180° less the golden angle
   ["line", "Second line, °", 10, 90, 0.5, 42.5],
@@ -228,6 +228,7 @@ const SCALES = [
 
 <script>
   import catalogue from "../data/stars.json";
+  import milkyWay from "../data/milkyway.json";
   import { UP, moonPhase, siderealTime } from "../lib/sky";
 
   type Star = [ra: number, dec: number, mag: number, bv: number | null];
@@ -370,6 +371,7 @@ const SCALES = [
   let bus: GainNode;
   /** Everything but the named stars: it steps back while one of them rings */
   let under: GainNode;
+  let low: GainNode;
   /** What each control drives, once there is sound */
   let dials: Record<string, AudioParam> = {};
 
@@ -385,23 +387,10 @@ const SCALES = [
     under = audio.createGain();
     under.connect(bus);
 
-    // A low open fifth under everything, so a slow sky is never silent
-    const bed = audio.createGain();
-    const soft = audio.createBiquadFilter();
-    soft.frequency.value = 500;
-    for (const [frequency, detune] of [
-      [55, -4],
-      [110, 3],
-      [164.81, -2],
-    ]) {
-      const voice = audio.createOscillator();
-      voice.type = "triangle";
-      voice.frequency.value = frequency;
-      voice.detune.value = detune;
-      voice.connect(soft);
-      voice.start();
-    }
-    soft.connect(bed).connect(under);
+    // The bass stays out of the echo, which would blur it
+    low = audio.createGain();
+    low.connect(limiter);
+    survey();
     bus.connect(echo).connect(damp).connect(again).connect(echo);
     damp.connect(wet).connect(limiter);
     limiter.connect(audio.destination);
@@ -411,7 +400,7 @@ const SCALES = [
       repeats: again.gain,
       gap: echo.delayTime,
       tone: damp.frequency,
-      drone: bed.gain,
+      bass: low.gain,
     };
     for (const name in dials) dials[name].value = knob(name);
   };
@@ -509,6 +498,8 @@ const SCALES = [
       tone(pitch * 2, bell * 0.5, length * 0.7);
       tone(pitch * 3, bell * 0.3, length * 0.5);
       tone(pitch * 4.2, bell * 0.12, length * 0.25);
+      // The bass takes its root from the last bell
+      root = (interval ?? semitones) % 12;
       // The rest of the sky steps back, then returns as the bell fades
       under.gain.cancelScheduledValues(at);
       under.gain.setTargetAtTime(0.3, at, 0.03);
@@ -586,6 +577,72 @@ const SCALES = [
   let second = knob("line");
   let last = performance.now();
 
+  // The bass line has three sources: its root is the last named star's note,
+  // its beat is sidereal time, and the Milky Way on the meridian opens its tone
+  /** Semitones above A1 */
+  let root = 0;
+  /** Degrees of turn per beat: a quarter of a degree is one sidereal minute */
+  const BEAT = 0.25;
+  /** Semitones above the root on each beat of the bar, or a rest */
+  const BAR = [0, null, 0, 7, 0, null, 12, 7];
+  let beat = 0;
+
+  /** How much of the Milky Way lies on the meridian at every other degree, 0 to 1 */
+  let glow: number[] = [];
+  const survey = () => {
+    const flat = (ra: number, dec: number) => {
+      const angle = (ra * Math.PI) / 180;
+      return [(90 + dec) * Math.sin(angle), (90 + dec) * Math.cos(angle)];
+    };
+    const levels = (milkyWay as [number, number][][][]).map((rings) =>
+      rings.map((ring) => ring.map(([ra, dec]) => flat(ra, dec))),
+    );
+    const holds = (ring: number[][], x: number, y: number) => {
+      let odd = false;
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const [xi, yi] = ring[i];
+        const [xj, yj] = ring[j];
+        if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
+          odd = !odd;
+        }
+      }
+      return odd;
+    };
+    const totals = Array.from({ length: 180 }, (_, i) => {
+      let total = 0;
+      for (let dec = -85; dec <= 20; dec += 5) {
+        const [x, y] = flat(i * 2, dec);
+        for (const rings of levels) {
+          total += rings.filter((ring) => holds(ring, x, y)).length % 2;
+        }
+      }
+      return total;
+    });
+    const most = Math.max(...totals);
+    glow = totals.map((total) => total / most);
+  };
+
+  const pluck = (index: number) => {
+    if (!audio || audio.state !== "running") return;
+    const interval = BAR[((index % BAR.length) + BAR.length) % BAR.length];
+    if (interval === null) return;
+    const at = audio.currentTime;
+    const density = glow[Math.floor((((time % 360) + 360) % 360) / 2)] ?? 0;
+    const voice = audio.createOscillator();
+    const muffle = audio.createBiquadFilter();
+    const loudness = audio.createGain();
+    voice.type = "sawtooth";
+    voice.frequency.value = 55 * 2 ** ((root + interval) / 12);
+    muffle.frequency.value = 160 + 1500 * density;
+    muffle.Q.value = 3;
+    loudness.gain.setValueAtTime(0, at);
+    loudness.gain.linearRampToValueAtTime(1, at + 0.01);
+    loudness.gain.exponentialRampToValueAtTime(0.0001, at + 0.5);
+    voice.connect(muffle).connect(loudness).connect(low);
+    voice.start(at);
+    voice.stop(at + 0.55);
+  };
+
   const frame = (now: number) => {
     const elapsed = Math.min(0.1, (now - last) / 1000);
     last = now;
@@ -594,6 +651,13 @@ const SCALES = [
     const rest = listening ? Math.max(REAL, knob("pace")) : REAL;
     speed = rest + (speed - rest) * Math.exp(-elapsed / 1.5);
     chart.style.rotate = `${(time - UP).toFixed(3)}deg`;
+
+    // A fast sky halves the bass until it is back to a few beats a second
+    let size = BEAT;
+    while (speed / size > 4) size *= 2;
+    const index = Math.floor(time / size);
+    if (index !== beat) pluck(index);
+    beat = index;
 
     const LINES = lines();
     // A line that was just moved would sweep up every star in between
