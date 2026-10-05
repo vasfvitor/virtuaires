@@ -86,6 +86,8 @@ const KNOBS = [
   ["shimmer", "Overtone", 0, 1, 0.01, 0.25],
   // 180° less the golden angle
   ["line", "Second line, °", 10, 90, 0.5, 42.5],
+  // For what the browser does not report, such as wireless headphones
+  ["sync", "Sound earlier, ms", 0, 400, 10, 0],
 ] as const;
 /** Starting points for the controls: each one only lists what it changes */
 const PRESETS = {
@@ -1218,11 +1220,19 @@ const glow = (() => {
 
   /** Shows one step of the grid on the sky, as it sounds */
   const show = (step: number, now: number) => {
+    // The sound keeps to the grid, but a star's ring and name appear the
+    // moment it touches its line: steps are shown a step early, and each
+    // ring waits for its own crossing
+    const when = (sidereal: number) =>
+      now + Math.max(0, (sidereal - time) / speed) * 1000;
+    const crossing = (star: Star, west: number) =>
+      step * GRID + wrap(star[0] + west - step * GRID + 180) - 180;
     const hits = hitsAt(step);
     for (const { star, line, band } of hits) {
+      const born = when(crossing(star, line.west));
       rings.push({
         ...along(line.west, 90 + star[1]),
-        born: now,
+        born,
         size: band === "bells" ? 46 : Math.max(3, 16 - star[2] * 2.2),
         color: COLORS[colorClass(star[3])][1],
         bold: band === "bells",
@@ -1247,7 +1257,7 @@ const glow = (() => {
           );
         });
       const shift = [0, -17, 17, -34, 34, -51, 51].find(clear) ?? 0;
-      labels.push({ name, star, west: line.west, born: now, shift });
+      labels.push({ name, star, west: line.west, born, shift });
     }
     // The tune is drawn from the stars but has none of its own: it sounds on
     // the meridian at its pitch, and the bass from the pole
@@ -1255,7 +1265,7 @@ const glow = (() => {
     if (note) {
       rings.push({
         ...along(0, span(0) * (0.15 + 0.75 * heightOfNote(note.degree))),
-        born: now,
+        born: when(step * GRID),
         size: 8 + note.steps * 2,
         color: TUNE,
         bold: true,
@@ -1265,7 +1275,7 @@ const glow = (() => {
     if (part !== null) {
       rings.push({
         ...pole,
-        born: now,
+        born: when(step * GRID),
         size: 22 + part * 15,
         color: BASS,
         bold: false,
@@ -1408,6 +1418,7 @@ const glow = (() => {
     pen.font = NAME_FONT;
     pen.fillStyle = PALE;
     for (const label of labels) {
+      if (now < label.born) continue;
       const turned = past(label);
       const { x, y } = along(turned + label.west, 90 + label.star[1]);
       pen.globalAlpha =
@@ -1416,6 +1427,7 @@ const glow = (() => {
     }
     rings = rings.filter((ring) => now - ring.born < 1800);
     for (const ring of rings) {
+      if (now < ring.born) continue;
       const age = (now - ring.born) / 1800;
       pen.lineWidth = ring.bold ? 2 : 1;
       pen.strokeStyle = ring.color;
@@ -1502,18 +1514,24 @@ const glow = (() => {
     const angle = `${(time - UP).toFixed(3)}deg`;
     if (angle !== written) chart.style.rotate = written = angle;
 
-    // Sound is scheduled a little ahead, to fall exactly on the grid
-    const due = Math.floor((time + speed * AHEAD) / GRID);
+    // Sound is scheduled a little ahead, to fall exactly on the grid, and
+    // earlier still by the time it takes to reach the speakers, so it is
+    // heard as the star crosses
+    const lag =
+      (audio?.baseLatency ?? 0) +
+      (audio?.outputLatency ?? 0) +
+      knob("sync") / 1000;
+    const due = Math.floor((time + speed * (AHEAD + lag)) / GRID);
     // After a pause, such as a hidden tab, there is no catching up
     if (due - played > 16) played = due - 1;
     while (played < due) {
       played++;
       if (audio?.state === "running" && !travel) {
-        const wait = Math.max(0, (played * GRID - time) / speed);
-        schedule(played, audio.currentTime + wait);
+        const wait = (played * GRID - time) / speed - lag;
+        schedule(played, audio.currentTime + Math.max(0, wait));
       }
     }
-    const here = Math.floor(time / GRID);
+    const here = Math.floor(time / GRID) + 1;
     if (here - shown > 16) shown = here - 1;
     while (shown < here) show(++shown, now);
 
