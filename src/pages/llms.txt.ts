@@ -13,7 +13,6 @@ const text = (home: string) => `# ${SITE_TITLE}
 
 - [Home](${home})
 - [The southern sky, played](${home}sky/)
-- [The sky right now, as JSON](${home}sky.json): the Moon's phase, age and next new and full Moon, sunset and sunrise, and the stars above the horizon from Brasília, worked out when it is asked for
 - [GitHub](${GITHUB_URL})
 - [LinkedIn](${LINKEDIN_URL})
 
