@@ -150,7 +150,7 @@ const glow = (() => {
 <BaseLayout
   title="The southern sky"
   description={DESCRIPTION}
-  fonts={["STIXTwoText-regular", "STIXTwoText-italic"]}
+  fonts={["STIXTwoText-regular", "STIXTwoText-italic", "STIXTwoText-bold"]}
 >
   <script
     is:inline
@@ -454,7 +454,8 @@ const glow = (() => {
 </style>
 
 <script>
-  import catalogue from "../data/stars.json";
+  // The catalogue in a file of its own, which stays cached when the code changes
+  const { default: catalogue } = await import("../data/stars.json");
   import {
     COLORS,
     LIMIT,
