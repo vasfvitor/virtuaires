@@ -9,12 +9,16 @@ export const UP = 187;
 
 const julianDate = (date: Date) => date.getTime() / 86_400_000 + 2440587.5;
 
-/** How far to turn sky.svg clockwise so the stars on the meridian are straight up */
-export const skyAngle = (date: Date) => {
+/** Local sidereal time in degrees: the right ascension on the meridian */
+export const siderealTime = (date: Date) => {
   const greenwich =
     280.46061837 + 360.98564736629 * (julianDate(date) - 2451545);
-  return ((((greenwich + LONGITUDE - UP) % 360) + 360) % 360).toFixed(2);
+  return (((greenwich + LONGITUDE) % 360) + 360) % 360;
 };
+
+/** How far to turn sky.svg clockwise so the stars on the meridian are straight up */
+export const skyAngle = (date: Date) =>
+  ((siderealTime(date) - UP + 360) % 360).toFixed(2);
 
 /** Mean age of the Moon as a fraction of the lunar month: 0 is new, 0.5 is full */
 export const moonPhase = (date: Date) => {

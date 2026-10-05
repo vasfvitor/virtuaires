@@ -1,0 +1,502 @@
+---
+import BaseLayout from "@components/Layout/BaseLayout.astro";
+import { UP, moonLabel, moonPhase, siderealTime } from "../lib/sky";
+
+const now = new Date();
+
+/** The sound controls: key, label, lowest, highest, step and starting value */
+const KNOBS = [
+  ["volume", "Volume", 0, 1, 0.01, 0.7],
+  ["echo", "Echo level", 0, 1, 0.01, 1],
+  ["repeats", "Echo repeats", 0, 0.85, 0.01, 0.42],
+  ["gap", "Echo time, s", 0.05, 1, 0.01, 0.41],
+  ["tone", "Echo brightness, Hz", 400, 8000, 50, 2200],
+  ["length", "Note length", 0.3, 3, 0.05, 1],
+  ["shimmer", "Overtone", 0, 1, 0.01, 0.25],
+  ["contrast", "Faint stars", 0, 1, 0.01, 0.35],
+  ["bright", "Bright stars", 0, 1, 0.01, 0.6],
+  ["pace", "Pace, °/s", 0, 0.6, 0.005, 0.08],
+] as const;
+const SCALES = [
+  "Lydian",
+  "Major",
+  "Suspended",
+  "Minor",
+  "Hirajoshi",
+  "Phrygian",
+];
+---
+
+<BaseLayout
+  title="The southern sky, played"
+  description="The southern sky as a music box: every star that crosses the meridian plays a note, from real star positions."
+  fonts={["STIXTwoText-regular", "STIXTwoText-italic"]}
+  noindex
+>
+  <div
+    class="chart"
+    aria-hidden="true"
+    style={`rotate: ${(siderealTime(now) - UP).toFixed(2)}deg`}
+  ></div>
+  <canvas aria-hidden="true"></canvas>
+  <main>
+    <h1>The southern sky, played</h1>
+    <p>Each star that crosses the line plays a note.</p>
+    <button type="button" aria-pressed="false">
+      Listen
+    </button>
+    <p class="readout">
+      <span class="moon">{moonLabel(moonPhase(now))}</span>
+      <br />
+      <span class="star">&nbsp;</span>
+    </p>
+    <details open>
+      <summary>Sound</summary>
+      <div class="knobs">
+        {KNOBS.map(([key, label, min, max, step, value]) => (
+          <label>
+            <span>{label}</span>
+            <input type="range" name={key} {min} {max} {step} {value} />
+            <output>{value}</output>
+          </label>
+        ))}
+        <label>
+          <span>Scale</span>
+          <select name="scale">
+            <option value="">The Moon's</option>
+            {SCALES.map((name, i) => (
+              <option value={i}>{name}</option>
+            ))}
+          </select>
+        </label>
+        <button type="reset">Reset</button>
+      </div>
+    </details>
+    <p class="home">
+      <a href="/">Vitor Ayres</a>
+    </p>
+  </main>
+</BaseLayout>
+
+<style>
+  /* Same chart as the home page, with the pole near the bottom of the window */
+  .chart {
+    position: fixed;
+    z-index: -30;
+    left: 50%;
+    top: 86svh;
+    width: max(210svh, 130vw);
+    height: max(210svh, 130vw);
+    translate: -50% -50%;
+    background: url("/sky.svg") center / 100% 100% no-repeat;
+    pointer-events: none;
+    will-change: rotate;
+    animation: reveal 1618ms ease-out both;
+  }
+
+  canvas {
+    position: fixed;
+    z-index: -20;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  main {
+    min-height: calc(100svh - 4rem);
+    background: none;
+    box-shadow: none;
+    text-shadow:
+      0 0 0.4em var(--ground),
+      0 0 1em var(--ground);
+  }
+
+  h1 {
+    font-size: 1.6rem;
+    line-height: 1.3;
+    margin-bottom: 0;
+    text-align: left;
+  }
+
+  p {
+    max-width: 22rem;
+    margin-top: 0.5rem;
+    font-style: italic;
+    color: var(--muted);
+  }
+
+  button {
+    margin-top: 1rem;
+    padding: 0.15rem 0.9rem;
+    border: 1px solid var(--rule);
+    border-radius: 2rem;
+    background: color-mix(in srgb, var(--ground) 70%, transparent);
+    color: var(--heading);
+    cursor: pointer;
+  }
+
+  button:hover,
+  button[aria-pressed="true"] {
+    border-color: var(--accent);
+  }
+
+  button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .readout {
+    font-size: 0.8rem;
+    font-style: normal;
+    font-variant-numeric: tabular-nums;
+  }
+
+  details {
+    max-width: 22rem;
+    margin-top: 0.75rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  summary {
+    width: fit-content;
+    cursor: pointer;
+  }
+
+  .knobs {
+    display: grid;
+    gap: 0.1rem;
+    margin-top: 0.25rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--rule);
+    border-radius: 0.5rem;
+    background: color-mix(in srgb, var(--ground) 75%, transparent);
+  }
+
+  label {
+    display: grid;
+    grid-template-columns: 9.5rem 1fr 2.6rem;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  input,
+  select {
+    min-width: 0;
+    accent-color: var(--accent);
+  }
+
+  select {
+    grid-column: span 2;
+    font: inherit;
+    color: var(--text);
+    background: var(--ground);
+    border: 1px solid var(--rule);
+    border-radius: 0.25rem;
+  }
+
+  output {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  .knobs button {
+    justify-self: start;
+    margin-top: 0.4rem;
+    font-size: inherit;
+  }
+
+  .home {
+    font-size: 0.8rem;
+    font-style: normal;
+  }
+</style>
+
+<script>
+  import catalogue from "../data/stars.json";
+  import { UP, moonPhase, siderealTime } from "../lib/sky";
+
+  type Star = [ra: number, dec: number, mag: number, bv: number | null];
+
+  /** Sorted by right ascension, the order in which the stars reach the line */
+  const stars = [...(catalogue as Star[])].sort((a, b) => a[0] - b[0]);
+
+  /** Degrees per second the real sky turns */
+  const REAL = 360.98564736629 / 86_400;
+  /** Faintest magnitude that still gets the fuller voice */
+  const NAMED = 1.6;
+  /** Degrees across the whole chart, see sky.svg.ts */
+  const SPAN = 260;
+
+  /** One scale per stretch of the lunar month, from the full Moon's to the new Moon's */
+  const SCALES = [
+    [0, 2, 4, 6, 7, 9, 11],
+    [0, 2, 4, 7, 9],
+    [0, 2, 5, 7, 10],
+    [0, 3, 5, 7, 10],
+    [0, 2, 3, 7, 8],
+    [0, 1, 5, 7, 8],
+  ];
+  const lit = (1 - Math.cos(2 * Math.PI * moonPhase(new Date()))) / 2;
+  const moonScale = Math.round((1 - lit) * (SCALES.length - 1));
+
+  // The controls under "Sound"
+  const panel = document.querySelector<HTMLElement>(".knobs")!;
+  const picker = panel.querySelector("select")!;
+  const knobs = Object.fromEntries(
+    [...panel.querySelectorAll("input")].map((input) => [input.name, input]),
+  );
+  const knob = (name: string) => knobs[name].valueAsNumber;
+  const currentScale = () =>
+    SCALES[picker.value === "" ? moonScale : Number(picker.value)];
+
+  const chart = document.querySelector<HTMLElement>(".chart")!;
+  const canvas = document.querySelector("canvas")!;
+  const pen = canvas.getContext("2d")!;
+  const button = document.querySelector<HTMLButtonElement>("main > button")!;
+  const readout = document.querySelector<HTMLElement>(".star")!;
+  const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // The line runs from the pole to the top of the window
+  let pole = { x: 0, y: 0 };
+  let perDegree = 1;
+  const measure = () => {
+    const ratio = devicePixelRatio;
+    canvas.width = canvas.clientWidth * ratio;
+    canvas.height = canvas.clientHeight * ratio;
+    pen.setTransform(ratio, 0, 0, ratio, 0, 0);
+    // Measured on the chart itself: turning it does not move its centre
+    const box = chart.getBoundingClientRect();
+    pole = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    perDegree = chart.offsetWidth / SPAN;
+  };
+  measure();
+  addEventListener("resize", measure);
+
+  /** How many degrees of declination the line covers, from the pole up */
+  const reach = () => pole.y / perDegree;
+
+  // Sound: a soft bell per star, into a long echo
+  let audio: AudioContext | undefined;
+  let bus: GainNode;
+  /** What each control drives, once there is sound */
+  let dials: Record<string, AudioParam> = {};
+
+  const wake = () => {
+    audio = new AudioContext();
+    bus = audio.createGain();
+    const limiter = audio.createDynamicsCompressor();
+    const echo = audio.createDelay(1);
+    const damp = audio.createBiquadFilter();
+    const again = audio.createGain();
+    const wet = audio.createGain();
+    bus.connect(limiter);
+    bus.connect(echo).connect(damp).connect(again).connect(echo);
+    damp.connect(wet).connect(limiter);
+    limiter.connect(audio.destination);
+    dials = {
+      volume: bus.gain,
+      echo: wet.gain,
+      repeats: again.gain,
+      gap: echo.delayTime,
+      tone: damp.frequency,
+    };
+    for (const name in dials) dials[name].value = knob(name);
+  };
+
+  const tune = () => {
+    for (const input of Object.values(knobs)) {
+      input.nextElementSibling!.textContent = input.value;
+      dials[input.name]?.setTargetAtTime(
+        input.valueAsNumber,
+        audio!.currentTime,
+        0.05,
+      );
+    }
+  };
+  panel.addEventListener("input", tune);
+  panel.querySelector("button")!.addEventListener("click", () => {
+    for (const input of Object.values(knobs)) input.value = input.defaultValue;
+    picker.value = "";
+    tune();
+  });
+
+  const play = ([, dec, mag, bv]: Star) => {
+    if (!audio || audio.state !== "running") return;
+    const height = (90 + dec) / reach();
+    const scale = currentScale();
+    // Higher on the line is higher in pitch, over four octaves from A2
+    const step = Math.floor(height * scale.length * 4);
+    const semitones =
+      12 * Math.floor(step / scale.length) + scale[step % scale.length];
+    // Cool red stars sound an octave lower and rounder, hot blue ones glassier
+    const warm = (bv ?? 0.65) > 1;
+    const hot = (bv ?? 0.65) < 0.3;
+    const pitch = (warm ? 55 : 110) * 2 ** (semitones / 12);
+    // The first-magnitude stars, the ones with names, ring like a struck bell
+    const named = mag <= NAMED;
+    // A magnitude is a factor of about 2.5 in light; the ear gets a gentler curve
+    const faint = 10 ** (-(0.34 - 0.24 * knob("contrast")) * mag);
+    const level =
+      Math.max(named ? 0.35 : 0, Math.min(0.9, 0.5 * faint)) * (1 - height / 2);
+    const length = (0.8 + 4 * level) * knob("length") * (named ? 2 : 1);
+    const at = audio.currentTime;
+
+    const tone = (frequency: number, peak: number, ends: number) => {
+      if (peak < 0.0005) return;
+      const voice = audio!.createOscillator();
+      const gain = audio!.createGain();
+      voice.type = warm ? "triangle" : "sine";
+      voice.frequency.value = frequency;
+      gain.gain.setValueAtTime(0, at);
+      gain.gain.linearRampToValueAtTime(peak, at + (warm ? 0.04 : 0.006));
+      gain.gain.exponentialRampToValueAtTime(0.0001, at + ends);
+      voice.connect(gain).connect(bus);
+      voice.start(at);
+      voice.stop(at + ends + 0.05);
+    };
+    tone(pitch, level, length);
+    if (!warm) {
+      tone(pitch * (hot ? 3 : 2), level * knob("shimmer"), length * 0.4);
+    }
+    if (named) {
+      const bell = level * knob("bright");
+      tone(pitch / 2, bell, length);
+      tone(pitch * 2, bell * 0.5, length * 0.7);
+      tone(pitch * 3, bell * 0.3, length * 0.5);
+      tone(pitch * 4.2, bell * 0.12, length * 0.25);
+    }
+  };
+
+  // Each note leaves a ring where its star crossed
+  type Ring = {
+    y: number;
+    born: number;
+    size: number;
+    color: string;
+    named: boolean;
+  };
+  let rings: Ring[] = [];
+  const tint = (bv: number | null) =>
+    (bv ?? 0.65) < 0.3
+      ? "207,220,255"
+      : (bv ?? 0.65) > 1
+        ? "255,207,135"
+        : "255,246,224";
+
+  const hours = (ra: number) => {
+    const minutes = Math.round((ra / 15) * 60) % 1440;
+    return `${String(Math.floor(minutes / 60)).padStart(2, "0")}h ${String(minutes % 60).padStart(2, "0")}m`;
+  };
+  const degrees = (dec: number) => {
+    const minutes = Math.round(Math.abs(dec) * 60);
+    return `${dec < 0 ? "−" : "+"}${Math.floor(minutes / 60)}° ${String(minutes % 60).padStart(2, "0")}′`;
+  };
+
+  /** The stars whose right ascension lies between two sidereal times, on the visible line */
+  const crossed = (from: number, to: number) => {
+    const [low, high] = from < to ? [from, to] : [to, from];
+    if (high - low >= 360) return [];
+    const limit = reach() - 90;
+    const found: Star[] = [];
+    const wrap = (n: number) => ((n % 360) + 360) % 360;
+    const [a, b] = [wrap(low), wrap(high)];
+    const first = (ra: number) => {
+      let [i, j] = [0, stars.length];
+      while (i < j) {
+        const mid = (i + j) >> 1;
+        if (stars[mid][0] <= ra) i = mid + 1;
+        else j = mid;
+      }
+      return i;
+    };
+    const take = (start: number, end: number) => {
+      for (let i = first(start); i < stars.length && stars[i][0] <= end; i++) {
+        if (stars[i][1] <= limit) found.push(stars[i]);
+      }
+    };
+    if (a <= b) take(a, b);
+    else {
+      take(a, 360);
+      take(-1, b);
+    }
+    return found;
+  };
+
+  let time = siderealTime(new Date());
+  /** Where the sky stood at the last frame */
+  let seen = time;
+  let speed = REAL;
+  let listening = false;
+  /** When the last note was played */
+  let sounded = 0;
+  let last = performance.now();
+
+  const frame = (now: number) => {
+    const elapsed = Math.min(0.1, (now - last) / 1000);
+    last = now;
+    time += speed * elapsed;
+    // The sky keeps its real pace until someone listens, then eases to the chosen one
+    const rest = listening ? Math.max(REAL, knob("pace")) : REAL;
+    speed = rest + (speed - rest) * Math.exp(-elapsed / 1.5);
+    chart.style.rotate = `${(time - UP).toFixed(3)}deg`;
+
+    const notes = crossed(seen, time).sort((a, b) => a[2] - b[2]);
+    seen = time;
+    // A fast spin would pile up hundreds of notes a second: keep the brightest
+    if (notes.length && now - sounded > 35) {
+      notes.slice(0, 3).forEach(play);
+      sounded = now;
+    }
+    for (const star of notes.slice(0, 40)) {
+      rings.push({
+        y: pole.y - (90 + star[1]) * perDegree,
+        born: now,
+        size: star[2] <= NAMED ? 46 : Math.max(3, 16 - star[2] * 2.2),
+        color: tint(star[3]),
+        named: star[2] <= NAMED,
+      });
+    }
+    if (notes[0]) {
+      const [ra, dec, mag] = notes[0];
+      readout.textContent = `α ${hours(ra)}, δ ${degrees(dec)}, mag ${mag.toFixed(1)}`;
+    }
+
+    pen.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+    pen.lineWidth = 1;
+    pen.strokeStyle = "rgba(157,180,255,.3)";
+    pen.beginPath();
+    pen.moveTo(pole.x, pole.y);
+    pen.lineTo(pole.x, 0);
+    pen.stroke();
+    rings = rings.filter((ring) => now - ring.born < 1800);
+    for (const ring of rings) {
+      const age = (now - ring.born) / 1800;
+      pen.lineWidth = ring.named ? 2 : 1;
+      pen.strokeStyle = `rgba(${ring.color},${(0.7 * (1 - age) ** 2).toFixed(3)})`;
+      pen.beginPath();
+      pen.arc(
+        pole.x,
+        ring.y,
+        1.5 + ring.size * (calm ? 0.4 : age ** 0.5),
+        0,
+        7,
+      );
+      pen.stroke();
+    }
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+
+  const listen = async (on: boolean) => {
+    if (on && !audio) {
+      wake();
+    }
+    listening = on;
+    await (on ? audio?.resume() : audio?.suspend());
+    button.ariaPressed = String(on);
+    button.textContent = on ? "Mute" : "Listen";
+  };
+  button.addEventListener("click", () => listen(button.ariaPressed !== "true"));
+</script>
