@@ -16,6 +16,12 @@ const BANDS = [
   ["stars", "Tune", "A motif drawn from the stars as each verse begins", 1],
   ["dust", "Dust", "Every other star crossing, on the notes of the chord", 0.6],
   [
+    "drums",
+    "Pulse",
+    "A soft kick on the beat, and the fainter stars as a hi-hat",
+    0.7,
+  ],
+  [
     "bass",
     "Bass",
     "The chord's root, on a beat of sidereal minutes, brighter in the Milky Way",
@@ -39,7 +45,7 @@ const PRESETS = {
   Dry: { echo: 0, length: 0.7 },
   Cathedral: { tempo: 54, repeats: 0.7, tone: 1400, length: 1.6 },
   Glass: { shimmer: 0.8, tone: 6000, length: 0.6, repeats: 0.3 },
-  "Bells only": { stars: 0, dust: 0, bass: 0 },
+  "Bells only": { stars: 0, dust: 0, drums: 0, bass: 0 },
   Rain: { tempo: 132, length: 0.4, repeats: 0.25 },
 };
 /** One scale per stretch of the lunar month, from the full Moon's to the new Moon's */
@@ -339,7 +345,7 @@ const glow = (() => {
   } from "../lib/sky";
 
   /** The instruments, each with its own way into the mix */
-  type Band = "bells" | "stars" | "dust" | "bass";
+  type Band = "bells" | "stars" | "dust" | "drums" | "bass";
   /** A line the stars play on: degrees west of the meridian, and how loud */
   type Line = { west: number; gain: number };
   /** A star reaching a line: a named one rings a bell, any other glints */
@@ -719,6 +725,23 @@ const glow = (() => {
   const GROOVE = [0, , , , , , 0, , 1, , , , 2, , 1, ,];
   const bassAt = (step: number) => GROOVE[wrap(step, BAR)] ?? null;
 
+  /**
+   * The pulse: a kick on the first and third beats, and on the push before the
+   * third while the Milky Way is on the meridian. The hi-hat is the stars: one
+   * on every eighth note where a faint star crosses, and a ghost note between
+   * them when a brighter one does
+   */
+  const drumsAt = (step: number) => {
+    const at = wrap(step, BAR);
+    const kick =
+      at === 0 || at === 8 || (at === 6 && glowAt(step * GRID) > 0.5);
+    const star = hitsAt(step).find(
+      (hit) => hit.band === "dust" && !hit.line.west,
+    )?.star;
+    const hat = star && (at % 2 === 0 || star[2] <= CLEAR) ? star : undefined;
+    return { kick, hat };
+  };
+
   /** Beats are stressed, the sixteenths between them light */
   const stressAt = (step: number) =>
     wrap(step, 4) === 0 ? 1.2 : wrap(step, 2) === 0 ? 0.9 : 0.6;
@@ -730,6 +753,8 @@ const glow = (() => {
   /** The tune and the glints: they step back while a bell rings */
   let under: GainNode;
   let delay: DelayNode;
+  /** Half a second of hiss, for the hi-hat */
+  let noise: AudioBuffer;
   /** What each control drives */
   let dials: Record<string, AudioParam> = {};
 
@@ -749,14 +774,20 @@ const glow = (() => {
       bells: audio.createGain(),
       stars: audio.createGain(),
       dust: audio.createGain(),
+      drums: audio.createGain(),
       bass: audio.createGain(),
     };
     outs.bells.connect(bus);
     outs.stars.connect(under);
     outs.dust.connect(under);
     under.connect(bus);
-    // The bass stays out of the echo, which would blur it
+    // The bass and drums stay out of the echo, which would blur them
     outs.bass.connect(limiter);
+    outs.drums.connect(limiter);
+    noise = audio.createBuffer(1, audio.sampleRate / 2, audio.sampleRate);
+    noise.getChannelData(0).forEach((_, i, data) => {
+      data[i] = Math.random() * 2 - 1;
+    });
     bus.connect(limiter);
     bus.connect(delay).connect(damp).connect(again).connect(delay);
     damp.connect(wet).connect(limiter);
@@ -771,6 +802,7 @@ const glow = (() => {
       bells: outs.bells.gain,
       stars: outs.stars.gain,
       dust: outs.dust.gain,
+      drums: outs.drums.gain,
       bass: outs.bass.gain,
     };
     for (const name in dials) dials[name].value = knob(name);
@@ -933,6 +965,35 @@ const glow = (() => {
     }
   };
 
+  /** A kick: a low tone that drops as it fades */
+  const thump = (at: number) => {
+    const body = voice("sine", 110, at, 0.35);
+    body.frequency.setValueAtTime(110, at);
+    body.frequency.exponentialRampToValueAtTime(42, at + 0.12);
+    body.connect(strike("drums", at, 0.9, 0.002, 0.35));
+  };
+
+  /** A hi-hat: a short hiss, louder for a brighter star */
+  const tick = (star: Star, step: number, at: number) => {
+    const hiss = audio!.createBufferSource();
+    hiss.buffer = noise;
+    const thin = audio!.createBiquadFilter();
+    thin.type = "highpass";
+    thin.frequency.value = 7000;
+    hiss
+      .connect(thin)
+      .connect(
+        strike(
+          "drums",
+          at,
+          (0.1 + loudness(star) * 0.3) * stressAt(step),
+          0.001,
+          0.05,
+        ),
+      );
+    hiss.start(at, Math.random() * 0.4, 0.08);
+  };
+
   /** Sounds one step of the grid at the given time on the audio clock */
   const schedule = (step: number, at: number) => {
     for (const hit of hitsAt(step)) {
@@ -944,6 +1005,9 @@ const glow = (() => {
     const part = bassAt(step);
     if (part !== null) pluck(part, step, at);
     if (wrap(step, BAR) === 0) hold(step, at);
+    const { kick, hat } = drumsAt(step);
+    if (kick) thump(at);
+    if (hat) tick(hat, step, at);
   };
 
   // Each note leaves a ring where it sounds
@@ -1042,6 +1106,7 @@ const glow = (() => {
     bells: PALE,
     stars: TUNE,
     dust: RULE,
+    drums: PALE,
     bass: BASS,
   };
 
@@ -1072,6 +1137,15 @@ const glow = (() => {
         if (part === null) continue;
         pen.globalAlpha = alpha * (0.45 + 0.55 * glowAt(i * GRID));
         pen.fillRect(x, rise(part / 2) - 1.5, cell * 1.5, 3);
+      } else if (key === "drums") {
+        // Kicks along the bottom, the hi-hat along the top
+        const { kick, hat } = drumsAt(i);
+        pen.globalAlpha = alpha;
+        if (kick) pen.fillRect(x, rise(0.1) - 3, 2, 6);
+        if (hat) {
+          pen.globalAlpha = alpha * (0.4 + loudness(hat));
+          pen.fillRect(x, rise(0.85) - 1, 1.5, 3);
+        }
       } else if (key === "stars") {
         const note = melodyAt(i);
         if (!note) continue;
