@@ -151,6 +151,10 @@ const glow = (() => {
   title="The southern sky"
   description={DESCRIPTION}
   fonts={["STIXTwoText-regular", "STIXTwoText-italic", "STIXTwoText-bold"]}
+  image={{
+    src: "/og-sky.jpg",
+    alt: "The Southern Cross upright on the meridian, ringing as it crosses",
+  }}
 >
   <script
     is:inline
@@ -370,6 +374,14 @@ const glow = (() => {
     color: var(--text);
   }
 
+  /* On a phone the label goes above its value */
+  @media (max-width: 600px) {
+    .notes dl div {
+      display: block;
+      margin-top: 0.35rem;
+    }
+  }
+
   .readout {
     margin-top: 0.5rem;
     font-size: 0.8rem;
@@ -553,7 +565,11 @@ const glow = (() => {
   const today = () => {
     const date = new Date();
     document.querySelector(".phase")!.textContent = moonLabel(moonPhase(date));
-    const facts = skyFacts(date, stars);
+    const facts = skyFacts(
+      date,
+      stars,
+      Intl.DateTimeFormat().resolvedOptions().timeZone,
+    );
     for (const fact of document.querySelectorAll<HTMLElement>("[data-fact]")) {
       fact.textContent = facts[fact.dataset.fact as keyof typeof facts];
     }

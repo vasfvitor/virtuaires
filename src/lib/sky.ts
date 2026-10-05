@@ -237,21 +237,22 @@ const nextPhase = (date: Date, full: boolean) => {
   }
 };
 
-/** The facts the sky page lists, by key, as of a moment */
-export const skyFacts = (date: Date, catalogue: Star[]) => {
-  const zone = "America/Sao_Paulo";
-  const time = (when: Date) =>
-    when.toLocaleTimeString("en-GB", {
-      timeZone: zone,
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  const day = (when: Date) =>
-    when.toLocaleDateString("en-GB", {
-      timeZone: zone,
-      day: "numeric",
-      month: "long",
-    });
+/**
+ * The facts the sky page lists, by key, as of a moment. The Moon's dates are
+ * worldwide moments, so they are given in the reader's own time zone when it
+ * is known, and in UTC when it is not; the Sun's times are Brasília's own
+ */
+export const skyFacts = (date: Date, catalogue: Star[], reader?: string) => {
+  const format = (
+    when: Date,
+    timeZone: string,
+    parts: Intl.DateTimeFormatOptions,
+  ) => when.toLocaleString("en-GB", { timeZone, ...parts });
+  const clock = { hour: "2-digit", minute: "2-digit" } as const;
+  const local = (when: Date) => format(when, "America/Sao_Paulo", clock);
+  const theirs = reader ?? "UTC";
+  const moment = (when: Date) =>
+    `${format(when, theirs, { day: "numeric", month: "long" })}, ${format(when, theirs, clock)} ${reader ? "your time" : "UTC"}`;
 
   const phase = moonPhase(date);
   const age = (date.getTime() - lunation(date).last.getTime()) / 86_400_000;
@@ -270,12 +271,12 @@ export const skyFacts = (date: Date, catalogue: Star[]) => {
     phase: moonName(phase),
     lit: `${Math.round(litShare(phase) * 100)}%`,
     age: `${age.toFixed(1)} days`,
-    newMoon: day(nextPhase(date, false)),
-    fullMoon: day(nextPhase(date, true)),
-    sun: `sets ${time(sunset)}, rises ${time(sunrise)}`,
+    newMoon: moment(nextPhase(date, false)),
+    fullMoon: moment(nextPhase(date, true)),
+    sun: `sets ${local(sunset)}, rises ${local(sunrise)}, Brasília time`,
     stars: `${catalogue.filter(([ra, dec]) => up(ra, dec)).length.toLocaleString("en")} of ${catalogue.length.toLocaleString("en")}`,
     named: named.length ? named.join(", ") : "none",
     next: `${next}, in ${minutes < 60 ? "" : `${Math.floor(minutes / 60)} h `}${minutes % 60} min`,
-    asOf: `${date.toLocaleDateString("en-GB", { timeZone: zone, day: "numeric", month: "long", year: "numeric" })}, ${time(date)} Brasília time`,
+    asOf: `${format(date, theirs, { day: "numeric", month: "long", year: "numeric" })}, ${format(date, theirs, clock)} ${reader ? "your time" : "UTC"}`,
   };
 };
