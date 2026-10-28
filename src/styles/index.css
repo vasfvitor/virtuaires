@@ -164,6 +164,16 @@ h2 {
     0 0 0.6em var(--ground);
 }
 
+/* Splits the open source list into what I contribute to and what is mine */
+.projects .group {
+  margin: 2.75rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 /* On paper the page becomes a plain typeset sheet: no sky, dark ink on white */
 @media print {
   @page {
